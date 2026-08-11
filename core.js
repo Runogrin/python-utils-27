@@ -1,25 +1,43 @@
-function divide(a, b) {
-    // Check if inputs are numbers
-    if (typeof a !== 'number' || typeof b !== 'number') {
-        throw new TypeError('Both arguments must be numbers');
-    }
-    // Check for division by zero
-    if (b === 0) {
-        throw new RangeError('Cannot divide by zero');
-    }
-    return a / b;
+// Utility functions for general use
+
+/**
+ * Adds two numbers together.
+ *
+ * @param {number} a - The first number.
+ * @param {number} b - The second number.
+ * @returns {number} The sum of the two numbers.
+ */
+function add(a: number, b: number): number {
+    return a + b;
 }
 
-function safeDivide(a, b) {
-    try {
-        return divide(a, b);
-    } catch (error) {
-        console.error('Error occurred:', error.message);
-        return null; // Return null on error
-    }
+/**
+ * Checks if a value is an array.
+ *
+ * @param {*} value - The value to check.
+ * @returns {boolean} True if the value is an array, false otherwise.
+ */
+function isArray(value: any): value is Array<any> {
+    return Array.isArray(value);
 }
 
-console.log(safeDivide(10, 2)); // 5
-console.log(safeDivide(10, 0)); // Error logged, returns null
-console.log(safeDivide('10', 2)); // Error logged, returns null
-console.log(safeDivide(10, 'a')); // Error logged, returns null
+/**
+ * Flattens an array of arrays.
+ *
+ * @param {Array<Array<T>>} array - The array to flatten.
+ * @returns {Array<T>} A new flattened array.
+ */
+function flatten<T>(array: Array<Array<T>>): Array<T> {
+    return array.reduce((acc, cur) => acc.concat(cur), []);
+}
+
+/**
+ * Generates a unique identifier.
+ *
+ * @returns {string} A unique identifier string.
+ */
+function generateId(): string {
+    return 'id-' + Math.random().toString(36).substr(2, 9);
+}
+
+export { add, isArray, flatten, generateId };
