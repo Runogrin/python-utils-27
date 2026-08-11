@@ -1,43 +1,51 @@
-// Utility functions for general use
-
-/**
- * Adds two numbers together.
- *
- * @param {number} a - The first number.
- * @param {number} b - The second number.
- * @returns {number} The sum of the two numbers.
- */
-function add(a: number, b: number): number {
-    return a + b;
+// Function to merge two objects
+function mergeObjects(obj1, obj2) {
+    return {...obj1, ...obj2};
 }
 
-/**
- * Checks if a value is an array.
- *
- * @param {*} value - The value to check.
- * @returns {boolean} True if the value is an array, false otherwise.
- */
-function isArray(value: any): value is Array<any> {
+// Function to deep clone an object
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+// Function to check if a value is an array
+function isArray(value) {
     return Array.isArray(value);
 }
 
-/**
- * Flattens an array of arrays.
- *
- * @param {Array<Array<T>>} array - The array to flatten.
- * @returns {Array<T>} A new flattened array.
- */
-function flatten<T>(array: Array<Array<T>>): Array<T> {
-    return array.reduce((acc, cur) => acc.concat(cur), []);
+// Function to check if a value is a function
+function isFunction(value) {
+    return typeof value === 'function';
 }
 
-/**
- * Generates a unique identifier.
- *
- * @returns {string} A unique identifier string.
- */
-function generateId(): string {
-    return 'id-' + Math.random().toString(36).substr(2, 9);
+// Function to get a random integer between min and max
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export { add, isArray, flatten, generateId };
+// Function to throttle another function
+function throttle(func, limit) {
+    let lastFunc;
+    let lastRan;
+    return function() {
+        const context = this;
+        const args = arguments;
+        if (!lastRan) {
+            func.apply(context, args);
+            lastRan = Date.now();
+        } else {
+            clearTimeout(lastFunc);
+            lastFunc = setTimeout(function() {
+                if ((Date.now() - lastRan) >= limit) {
+                    func.apply(context, args);
+                    lastRan = Date.now();
+                }
+            }, limit - (Date.now() - lastRan));
+        }
+    };
+}
+
+// Exporting functions for use in other modules
+module.exports = { mergeObjects, deepClone, isArray, isFunction, getRandomInt, throttle };
