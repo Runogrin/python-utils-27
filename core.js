@@ -1,51 +1,46 @@
-// Function to merge two objects
-function mergeObjects(obj1, obj2) {
-    return {...obj1, ...obj2};
-}
+// Core functionalities for the autoclicker
 
-// Function to deep clone an object
-function deepClone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-}
+class AutoClicker {
+    constructor(delay) {
+        this.delay = delay || 1000; // default to 1000ms
+        this.isActive = false;
+        this.intervalId = null;
+    }
 
-// Function to check if a value is an array
-function isArray(value) {
-    return Array.isArray(value);
-}
+    start() {
+        if (this.isActive) return; // Prevent multiple activations
+        this.isActive = true;
+        this.intervalId = setInterval(() => this.click(), this.delay);
+    }
 
-// Function to check if a value is a function
-function isFunction(value) {
-    return typeof value === 'function';
-}
+    stop() {
+        if (!this.isActive) return;
+        clearInterval(this.intervalId);
+        this.isActive = false;
+    }
 
-// Function to get a random integer between min and max
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+    click() {
+        const event = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+        document.dispatchEvent(event);
+    }
 
-// Function to throttle another function
-function throttle(func, limit) {
-    let lastFunc;
-    let lastRan;
-    return function() {
-        const context = this;
-        const args = arguments;
-        if (!lastRan) {
-            func.apply(context, args);
-            lastRan = Date.now();
-        } else {
-            clearTimeout(lastFunc);
-            lastFunc = setTimeout(function() {
-                if ((Date.now() - lastRan) >= limit) {
-                    func.apply(context, args);
-                    lastRan = Date.now();
-                }
-            }, limit - (Date.now() - lastRan));
+    setDelay(newDelay) {
+        if (newDelay > 0) {
+            this.stop(); // Stop previous interval
+            this.delay = newDelay;
+            if (this.isActive) {
+                this.start(); // Restart with new delay
+            }
         }
-    };
+    }
 }
 
-// Exporting functions for use in other modules
-module.exports = { mergeObjects, deepClone, isArray, isFunction, getRandomInt, throttle };
+// Usage example
+const clicker = new AutoClicker(1000);
+
+// Export for use
+export default AutoClicker;
