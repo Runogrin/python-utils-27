@@ -1,46 +1,39 @@
-// Core functionalities for the autoclicker
+// Click coordinates for the autoclicker
+const clickCoordinates = { x: 0, y: 0 };
 
-class AutoClicker {
-    constructor(delay) {
-        this.delay = delay || 1000; // default to 1000ms
-        this.isActive = false;
-        this.intervalId = null;
-    }
-
-    start() {
-        if (this.isActive) return; // Prevent multiple activations
-        this.isActive = true;
-        this.intervalId = setInterval(() => this.click(), this.delay);
-    }
-
-    stop() {
-        if (!this.isActive) return;
-        clearInterval(this.intervalId);
-        this.isActive = false;
-    }
-
-    click() {
-        const event = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-        });
-        document.dispatchEvent(event);
-    }
-
-    setDelay(newDelay) {
-        if (newDelay > 0) {
-            this.stop(); // Stop previous interval
-            this.delay = newDelay;
-            if (this.isActive) {
-                this.start(); // Restart with new delay
-            }
-        }
+// Function to simulate mouse click
+function simulateClick(x, y) {
+    const clickEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: x,
+        clientY: y
+    });
+    const element = document.elementFromPoint(x, y);
+    if (element) {
+        element.dispatchEvent(clickEvent);
     }
 }
 
-// Usage example
-const clicker = new AutoClicker(1000);
+// Function to start autoclicking
+function startAutoclick(delay, clicks) {
+    let clickCount = 0;
+    const intervalId = setInterval(() => {
+        if (clickCount < clicks) {
+            simulateClick(clickCoordinates.x, clickCoordinates.y);
+            clickCount++;
+        } else {
+            clearInterval(intervalId);
+        }
+    }, delay);
+}
 
-// Export for use
-export default AutoClicker;
+// Function to set click coordinates
+function setClickCoordinates(x, y) {
+    clickCoordinates.x = x;
+    clickCoordinates.y = y;
+}
+
+// Exporting functions for external use
+export { simulateClick, startAutoclick, setClickCoordinates };
