@@ -1,44 +1,20 @@
-// Logger Utility for Error Handling
+const fs = require('fs');
+const path = require('path');
+
 class Logger {
-    constructor() {
-        this.logs = [];
+    constructor(logFile) {
+        this.logFile = logFile || path.join(__dirname, 'app.log');
     }
-
+    
     log(message) {
-        const logEntry = this.formatLog(message);
-        this.logs.push(logEntry);
-        console.log(logEntry);
-    }
-
-    formatLog(message) {
         const timestamp = new Date().toISOString();
-        return `${timestamp} - ${message}`;
+        const logMessage = `${timestamp} - ${message}\n`;
+        fs.appendFileSync(this.logFile, logMessage, 'utf8');
     }
-
-    error(message) {
-        const errorMessage = this.formatLog(`ERROR: ${message}`);
-        this.logs.push(errorMessage);
-        console.error(errorMessage);
-    }
-
-    getLogs() {
-        return this.logs;
-    }
-
-    clearLogs() {
-        this.logs = [];
+    
+    clear() {
+        fs.writeFileSync(this.logFile, '', 'utf8');
     }
 }
 
-// Usage example
-const logger = new Logger();
-logger.log('Application started.');
-try {
-    // Simulating an operation that may throw an error
-    throw new Error('Something went wrong.');
-} catch (err) {
-    logger.error(err.message);
-}
-logger.log('Application finished.');
-
-export default Logger;
+module.exports = new Logger();
