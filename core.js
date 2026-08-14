@@ -1,39 +1,42 @@
-// Click coordinates for the autoclicker
-const clickCoordinates = { x: 0, y: 0 };
+// Core functionality for the autoclicker
+class AutoClicker {
+    constructor(clickInterval) {
+        this.clickInterval = clickInterval;
+        this.intervalId = null;
+    }
 
-// Function to simulate mouse click
-function simulateClick(x, y) {
-    const clickEvent = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: x,
-        clientY: y
-    });
-    const element = document.elementFromPoint(x, y);
-    if (element) {
-        element.dispatchEvent(clickEvent);
+    start() {
+        if (this.intervalId === null) {
+            this.intervalId = setInterval(() => this.performClick(), this.clickInterval);
+            console.log('AutoClicker started');
+        }
+    }
+
+    stop() {
+        if (this.intervalId !== null) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+            console.log('AutoClicker stopped');
+        }
+    }
+
+    performClick() {
+        const event = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+        const element = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+        if (element) {
+            element.dispatchEvent(event);
+            console.log('Click performed');
+        } else {
+            console.log('No element found to click');
+        }
     }
 }
 
-// Function to start autoclicking
-function startAutoclick(delay, clicks) {
-    let clickCount = 0;
-    const intervalId = setInterval(() => {
-        if (clickCount < clicks) {
-            simulateClick(clickCoordinates.x, clickCoordinates.y);
-            clickCount++;
-        } else {
-            clearInterval(intervalId);
-        }
-    }, delay);
-}
-
-// Function to set click coordinates
-function setClickCoordinates(x, y) {
-    clickCoordinates.x = x;
-    clickCoordinates.y = y;
-}
-
-// Exporting functions for external use
-export { simulateClick, startAutoclick, setClickCoordinates };
+// Usage
+const clicker = new AutoClicker(1000); // Click every second
+// clicker.start(); // Uncomment to start clicking
+// clicker.stop(); // Uncomment to stop clicking
