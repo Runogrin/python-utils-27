@@ -3,18 +3,26 @@ const path = require('path');
 
 class Logger {
     constructor(logFile) {
-        this.logFile = logFile || path.join(__dirname, 'app.log');
+        this.logFilePath = path.join(__dirname, logFile);
     }
-    
+
     log(message) {
         const timestamp = new Date().toISOString();
         const logMessage = `${timestamp} - ${message}\n`;
-        fs.appendFileSync(this.logFile, logMessage, 'utf8');
+        fs.appendFile(this.logFilePath, logMessage, (err) => {
+            if (err) {
+                console.error('Failed to write to log file:', err);
+            }
+        });
     }
-    
+
     clear() {
-        fs.writeFileSync(this.logFile, '', 'utf8');
+        fs.writeFile(this.logFilePath, '', (err) => {
+            if (err) {
+                console.error('Failed to clear log file:', err);
+            }
+        });
     }
 }
 
-module.exports = new Logger();
+module.exports = Logger;
