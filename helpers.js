@@ -1,45 +1,43 @@
-// Utility functions for handling autoclicker data
+// Utility functions for autoclicker performance optimization
 
-/**
- * Converts a duration string to milliseconds.
- * @param {string} duration - The duration string (e.g., '2s', '500ms').
- * @returns {number} - Duration in milliseconds.
- */
-function durationToMilliseconds(duration) {
-    const timeUnits = { s: 1000, ms: 1 };
-    const match = duration.match(/(\d+)([sm])/);
-    if (!match) throw new Error('Invalid duration format');
-    const [, value, unit] = match;
-    return parseInt(value) * timeUnits[unit];
+// Throttle function to limit the rate of execution
+function throttle(func, limit) {
+    let lastFunc;
+    let lastRan;
+
+    return function() {
+        const context = this;
+        const args = arguments;
+
+        if (!lastRan) {
+            func.apply(context, args);
+            lastRan = Date.now();
+        } else {
+            clearTimeout(lastFunc);
+            lastFunc = setTimeout(function() {
+                if ((Date.now() - lastRan) >= limit) {
+                    func.apply(context, args);
+                    lastRan = Date.now();
+                }
+            }, limit - (Date.now() - lastRan));
+        }
+    };
 }
 
-/**
- * Generates clicks data based on provided parameters.
- * @param {number} count - Number of clicks to generate.
- * @param {number} interval - Interval between clicks in milliseconds.
- * @returns {Array} - Array of click objects with timestamp.
- */
-function generateClickData(count, interval) {
-    const clicks = [];
-    const now = Date.now();
-    for (let i = 0; i < count; i++) {
-        clicks.push({ timestamp: now + i * interval });
-    }
-    return clicks;
+// Debounce function to prevent excessive calls
+function debounce(func, delay) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), delay);
+    };
 }
 
-/**
- * Validates the click data for required fields.
- * @param {Array} clickData - Array of click objects.
- * @returns {boolean} - True if valid, false otherwise.
- */
-function validateClickData(clickData) {
-    return clickData.every(click => click.hasOwnProperty('timestamp'));
+// Simple log utility for performance monitoring
+function logPerformance(action, duration) {
+    console.log(`Action: ${action}, Duration: ${duration}ms`);
 }
 
-// Exporting utility functions for external use
-module.exports = {
-    durationToMilliseconds,
-    generateClickData,
-    validateClickData
-};
+export { throttle, debounce, logPerformance };
