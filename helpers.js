@@ -1,43 +1,34 @@
-// Utility functions for autoclicker performance optimization
+// Function to validate input for autoclicker settings
+function validateSettings(settings) {
+    if (typeof settings !== 'object' || settings === null) {
+        throw new Error('Invalid settings: must be an object');
+    }
+    if (typeof settings.interval !== 'number' || settings.interval <= 0) {
+        throw new Error('Invalid interval: must be a positive number');
+    }
+    if (typeof settings.clicks !== 'number' || settings.clicks < 0) {
+        throw new Error('Invalid clicks: must be a non-negative number');
+    }
+}
 
-// Throttle function to limit the rate of execution
-function throttle(func, limit) {
-    let lastFunc;
-    let lastRan;
-
-    return function() {
-        const context = this;
-        const args = arguments;
-
-        if (!lastRan) {
-            func.apply(context, args);
-            lastRan = Date.now();
-        } else {
-            clearTimeout(lastFunc);
-            lastFunc = setTimeout(function() {
-                if ((Date.now() - lastRan) >= limit) {
-                    func.apply(context, args);
-                    lastRan = Date.now();
-                }
-            }, limit - (Date.now() - lastRan));
+// Function to safely perform clicks
+function performClick(element, settings) {
+    try {
+        validateSettings(settings);
+        for (let i = 0; i < settings.clicks; i++) {
+            if (element) {
+                element.click();
+            } else {
+                throw new Error('Element not found for clicking');
+            }
+            if (i < settings.clicks - 1) {
+                setTimeout(() => {}, settings.interval);
+            }
         }
-    };
+    } catch (error) {
+        console.error('Error during clicking:', error);
+    }
 }
 
-// Debounce function to prevent excessive calls
-function debounce(func, delay) {
-    let timeout;
-    return function() {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), delay);
-    };
-}
-
-// Simple log utility for performance monitoring
-function logPerformance(action, duration) {
-    console.log(`Action: ${action}, Duration: ${duration}ms`);
-}
-
-export { throttle, debounce, logPerformance };
+// Export the utility functions
+module.exports = { validateSettings, performClick };
