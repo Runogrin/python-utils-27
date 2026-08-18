@@ -1,25 +1,18 @@
-const config = {
+// Default configuration values
+const defaultConfig = {
     clickInterval: 100,
-    maxClicks: 1000,
-    enableLogging: true,
-    clickButtonSelector: '#click-me',
-    setLogging(enabled) {
-        this.enableLogging = enabled;
-    },
-    adjustClickInterval(interval) {
-        if (interval > 0) {
-            this.clickInterval = interval;
-        } else {
-            console.warn('Click interval must be positive.');
-        }
-    },
-    updateMaxClicks(max) {
-        if (max > 0) {
-            this.maxClicks = max;
-        } else {
-            console.warn('Max clicks must be positive.');
-        }
-    }
+    maxClicks: 100,
+    repeat: false,
+    randomize: false
 };
 
-module.exports = config;
+// Function to load configuration from a given object
+function loadConfig(userConfig) {
+    return { ...defaultConfig, ...userConfig };
+}
+
+// Exported function to get the configuration
+module.exports = {
+    loadConfig,
+    defaultConfig
+};
