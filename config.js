@@ -1,28 +1,42 @@
-const config = {
-    clickDelay: 100,
-    maxClicks: 1000,
-    isActive: false,
-};
+// Configuration settings for the AutoClicker
 
-const validateConfig = () => {
-    if (typeof config.clickDelay !== 'number' || config.clickDelay < 0) {
-        throw new Error('Invalid clickDelay: must be a positive number');
+/**
+ * Represents the configuration for the autoclicker.
+ * @typedef {Object} AutoClickerConfig
+ * @property {number} clickInterval - Interval between clicks in milliseconds.
+ * @property {number} maxClicks - Maximum number of clicks to perform.
+ * @property {boolean} randomize - Whether to randomize the click interval.
+ */
+
+/**
+ * Load configuration settings for the autoclicker.
+ * @returns {AutoClickerConfig} The configuration settings.
+ */
+function loadConfig() {
+    return {  
+        clickInterval: 100,
+        maxClicks: 1000,
+        randomize: true
+    };
+}
+
+/**
+ * Validate the configuration settings.
+ * @param {AutoClickerConfig} config - The configuration settings to validate.
+ * @returns {boolean} True if valid, false otherwise.
+ */
+function validateConfig(config) {
+    const { clickInterval, maxClicks, randomize } = config;
+    if (typeof clickInterval !== 'number' || clickInterval <= 0) {
+        return false;
     }
-    if (typeof config.maxClicks !== 'number' || config.maxClicks <= 0) {
-        throw new Error('Invalid maxClicks: must be a positive number');
+    if (typeof maxClicks !== 'number' || maxClicks <= 0) {
+        return false;
     }
-};
-
-const initialize = () => {
-    try {
-        validateConfig();
-        console.log('Configuration validated successfully');
-    } catch (error) {
-        console.error('Error in configuration:', error.message);
-        process.exit(1);
+    if (typeof randomize !== 'boolean') {
+        return false;
     }
-};
+    return true;
+}
 
-initialize();
-
-module.exports = config;
+module.exports = { loadConfig, validateConfig };
