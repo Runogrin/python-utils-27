@@ -1,34 +1,61 @@
-// Function to validate input for autoclicker settings
-function validateSettings(settings) {
-    if (typeof settings !== 'object' || settings === null) {
-        throw new Error('Invalid settings: must be an object');
+// helpers.js - Autoclicker input validation helpers
+function validateInput(input) {
+  if (typeof input !== 'object' || input === null) {
+    return { isValid: false, message: 'Input must be a non-null object' };
+  }
+  if (typeof input.x !== 'number' || isNaN(input.x) || input.x < 0) {
+    return { isValid: false, message: 'x coordinate must be a non-negative number' };
+  }
+  if (typeof input.y !== 'number' || isNaN(input.y) || input.y < 0) {
+    return { isValid: false, message: 'y coordinate must be a non-negative number' };
+  }
+  if (input.delay !== undefined) {
+    if (typeof input.delay !== 'number' || isNaN(input.delay) || input.delay < 0) {
+      return { isValid: false, message: 'delay must be a non-negative number if provided' };
     }
-    if (typeof settings.interval !== 'number' || settings.interval <= 0) {
-        throw new Error('Invalid interval: must be a positive number');
+  }
+  if (input.clicks !== undefined) {
+    if (typeof input.clicks !== 'number' || isNaN(input.clicks) || input.clicks <= 0) {
+      return { isValid: false, message: 'clicks must be a positive number if provided' };
     }
-    if (typeof settings.clicks !== 'number' || settings.clicks < 0) {
-        throw new Error('Invalid clicks: must be a non-negative number');
-    }
+  }
+  return { isValid: true };
 }
 
-// Function to safely perform clicks
-function performClick(element, settings) {
-    try {
-        validateSettings(settings);
-        for (let i = 0; i < settings.clicks; i++) {
-            if (element) {
-                element.click();
-            } else {
-                throw new Error('Element not found for clicking');
-            }
-            if (i < settings.clicks - 1) {
-                setTimeout(() => {}, settings.interval);
-            }
-        }
-    } catch (error) {
-        console.error('Error during clicking:', error);
+function processMainLoop(inputs) {
+  // Main processing loop for autoclicker
+  if (!Array.isArray(inputs) || inputs.length === 0) {
+    console.error('Invalid inputs: must provide non-empty array');
+    return;
+  }
+  let currentIndex = 0;
+  function loop() {
+    if (currentIndex >= inputs.length) {
+      console.log('Autoclicker sequence completed successfully');
+      return;
     }
+    const currentInput = inputs[currentIndex];
+    // input validation in the main processing loop
+    const validationResult = validateInput(currentInput);
+    if (!validationResult.isValid) {
+      console.error(`Validation failed for input ${currentIndex}: ${validationResult.message}`);
+      currentIndex++;
+      setTimeout(loop, 0);
+      return;
+    }
+    console.log(`Processing click at position (${currentInput.x}, ${currentInput.y})`);
+    const delay = currentInput.delay || 1000;
+    const clicks = currentInput.clicks || 1;
+    for (let i = 0; i < clicks; i++) {
+      console.log(`  Simulated click ${i + 1} of ${clicks}`);
+    }
+    currentIndex++;
+    setTimeout(loop, delay);
+  }
+  loop();
 }
 
-// Export the utility functions
-module.exports = { validateSettings, performClick };
+module.exports = {
+  validateInput,
+  processMainLoop
+};
