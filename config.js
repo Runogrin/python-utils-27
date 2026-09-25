@@ -1,42 +1,36 @@
-// Configuration settings for the AutoClicker
+const fs = require('fs');
+const path = require('path');
 
 /**
- * Represents the configuration for the autoclicker.
- * @typedef {Object} AutoClickerConfig
- * @property {number} clickInterval - Interval between clicks in milliseconds.
- * @property {number} maxClicks - Maximum number of clicks to perform.
- * @property {boolean} randomize - Whether to randomize the click interval.
+ * default settings for the autoclicker
  */
+const defaults = {
+  interval: 100,
+  clickButton: 'left',
+  randomization: true,
+  maxRetries: 3
+};
 
 /**
- * Load configuration settings for the autoclicker.
- * @returns {AutoClickerConfig} The configuration settings.
+ * loads configuration from disk or returns defaults
  */
-function loadConfig() {
-    return {  
-        clickInterval: 100,
-        maxClicks: 1000,
-        randomize: true
-    };
+function loadConfig(configPath = './config.json') {
+  try {
+    if (!fs.existsSync(configPath)) {
+      return { ...defaults };
+    }
+
+    const data = fs.readFileSync(configPath, 'utf8');
+    const userConfig = JSON.parse(data);
+
+    // merge user settings with system defaults
+    return { ...defaults, ...userConfig };
+  } catch (err) {
+    console.error('failed to parse config, using defaults:', err.message);
+    return { ...defaults };
+  }
 }
 
-/**
- * Validate the configuration settings.
- * @param {AutoClickerConfig} config - The configuration settings to validate.
- * @returns {boolean} True if valid, false otherwise.
- */
-function validateConfig(config) {
-    const { clickInterval, maxClicks, randomize } = config;
-    if (typeof clickInterval !== 'number' || clickInterval <= 0) {
-        return false;
-    }
-    if (typeof maxClicks !== 'number' || maxClicks <= 0) {
-        return false;
-    }
-    if (typeof randomize !== 'boolean') {
-        return false;
-    }
-    return true;
-}
-
-module.exports = { loadConfig, validateConfig };
+module.exports = {
+  loadConfig
+};
