@@ -1,46 +1,51 @@
 # python-utils-27
 
-A robust collection of utility functions designed to simplify common operations in Python projects. Whether you're handling data processing, string manipulation, or file I/O, python-utils-27 provides essential tools to enhance productivity and code efficiency.
+A high-performance JavaScript-based autoclicker designed for rapid automation and task efficiency. This utility provides a streamlined, non-blocking interface to simulate mouse events with customizable intervals and trigger patterns.
 
 ## Features
 
-- **Data Handling Functions**: Effortlessly read, write, and manipulate CSV and JSON files with built-in methods tailored for common use cases.
-- **String Manipulation Tools**: Simplify text processing with a suite of functions that support common tasks such as formatting, cleaning, and transformation.
-- **Date and Time Utilities**: Work with date and time more effectively, featuring functions for parsing, formatting, and calculating time differences.
-- **Enhanced Error Handling**: Implement sophisticated error handling with custom exceptions that provide more informative feedback during runtime.
+*   **Configurable CPS:** Dynamically adjust clicks per second via a real-time slider or command-line arguments.
+*   **Targeted Coordinates:** Precise X/Y coordinate support to lock the autoclicker onto specific UI elements.
+*   **Intelligent Toggle:** Seamless start/stop functionality using global hotkeys that remain active while the application is minimized.
+*   **Humanization Engine:** Randomized click-delay patterns to bypass simple anti-automation detection scripts.
 
 ## Installation
 
-To get started with python-utils-27, clone the repository and install the necessary dependencies:
+Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
 
 ```bash
+# Clone the repository
 git clone https://github.com/Developer/python-utils-27.git
+
+# Navigate to the project directory
 cd python-utils-27
-pip install -r requirements.txt
+
+# Install dependencies
+npm install
+
+# Build the automation wrapper
+npm run build
 ```
 
-## Basic Usage Example
+## Basic Usage
 
-Here’s a quick example of how to use `python-utils-27` in your project:
+Run the utility directly from your terminal by specifying the target interval (in milliseconds).
 
-```python
-from utils import file_ops, string_utils, date_utils
-
-# Reading a JSON file
-data = file_ops.read_json('data/sample.json')
-
-# Transforming strings
-cleaned_text = string_utils.clean_text("    Hello, World!   ")
-
-# Formatting the current date
-formatted_date = date_utils.format_date("2023-10-01", format="%B %d, %Y")
-
-print(cleaned_text)  # Output: "Hello, World!"
-print(formatted_date)  # Output: "October 01, 2023"
+```bash
+# Perform a click every 100ms
+node index.js --interval 100 --x 500 --y 500
 ```
+
+To enable the interactive UI mode for visual control, run:
+
+```bash
+npm start
+```
+
+Once running, press `F6` to toggle clicking and `F7` to terminate the process.
 
 ## License
 
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
