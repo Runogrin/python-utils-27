@@ -2,35 +2,29 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * default settings for the autoclicker
+ * default configuration for the autoclicker
  */
 const defaults = {
   interval: 100,
-  clickButton: 'left',
-  randomization: true,
-  maxRetries: 3
+  duration: 5000,
+  button: 'left',
+  randomization: true
 };
 
 /**
- * loads configuration from disk or returns defaults
+ * loads configuration from a json file or returns defaults
  */
-function loadConfig(configPath = './config.json') {
+function loadConfig(configPath) {
   try {
-    if (!fs.existsSync(configPath)) {
-      return { ...defaults };
+    if (fs.existsSync(configPath)) {
+      const rawData = fs.readFileSync(configPath, 'utf8');
+      const userConfig = JSON.parse(rawData);
+      return { ...defaults, ...userConfig };
     }
-
-    const data = fs.readFileSync(configPath, 'utf8');
-    const userConfig = JSON.parse(data);
-
-    // merge user settings with system defaults
-    return { ...defaults, ...userConfig };
   } catch (err) {
-    console.error('failed to parse config, using defaults:', err.message);
-    return { ...defaults };
+    console.error('Error loading config, using defaults:', err.message);
   }
+  return { ...defaults };
 }
 
-module.exports = {
-  loadConfig
-};
+module.exports = { loadConfig };
