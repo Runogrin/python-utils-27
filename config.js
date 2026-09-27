@@ -1,30 +1,45 @@
-const fs = require('fs');
-const path = require('path');
+/**
+ * Configuration settings for the python-utils-27 autoclicker module
+ * @typedef {Object} ClickConfig
+ * @property {number} interval - Delay between clicks in milliseconds
+ * @property {number} duration - Maximum runtime in seconds
+ * @property {boolean} randomized - Whether to introduce jitter
+ */
 
 /**
- * default configuration for the autoclicker
+ * Default settings for the autoclicker execution
+ * @type {ClickConfig}
  */
-const defaults = {
-  interval: 100,
-  duration: 5000,
-  button: 'left',
-  randomization: true
+const defaultConfig = {
+  interval: 500,
+  duration: 60,
+  randomized: true
 };
 
 /**
- * loads configuration from a json file or returns defaults
+ * Validates the provided configuration object
+ * @param {ClickConfig} config - The configuration to validate
+ * @returns {boolean} True if config is valid
  */
-function loadConfig(configPath) {
-  try {
-    if (fs.existsSync(configPath)) {
-      const rawData = fs.readFileSync(configPath, 'utf8');
-      const userConfig = JSON.parse(rawData);
-      return { ...defaults, ...userConfig };
-    }
-  } catch (err) {
-    console.error('Error loading config, using defaults:', err.message);
-  }
-  return { ...defaults };
+function validateConfig(config) {
+  return (
+    typeof config.interval === 'number' && config.interval > 0 &&
+    typeof config.duration === 'number' && config.duration >= 0 &&
+    typeof config.randomized === 'boolean'
+  );
 }
 
-module.exports = { loadConfig };
+/**
+ * Merges user settings with default configuration
+ * @param {Partial<ClickConfig>} userConfig - Overrides for default settings
+ * @returns {ClickConfig} The merged active configuration
+ */
+function getActiveConfig(userConfig) {
+  const activeConfig = { ...defaultConfig, ...userConfig };
+  if (!validateConfig(activeConfig)) {
+    throw new Error('Invalid configuration parameters provided');
+  }
+  return activeConfig;
+}
+
+module.exports = { defaultConfig, getActiveConfig };
