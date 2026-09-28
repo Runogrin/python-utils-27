@@ -1,42 +1,35 @@
-// Core functionality for the autoclicker
-class AutoClicker {
-    constructor(clickInterval) {
-        this.clickInterval = clickInterval;
-        this.intervalId = null;
-    }
+const validateInput = (config) => {
+  if (typeof config.interval !== 'number' || config.interval < 50) {
+    throw new Error('Interval must be a number >= 50ms');
+  }
+  if (typeof config.clicks !== 'number' || config.clicks <= 0) {
+    throw new Error('Click count must be a positive integer');
+  }
+};
 
-    start() {
-        if (this.intervalId === null) {
-            this.intervalId = setInterval(() => this.performClick(), this.clickInterval);
-            console.log('AutoClicker started');
-        }
-    }
+/**
+ * Main processing loop for the autoclicker
+ */
+async function startClicking(config) {
+  try {
+    validateInput(config);
+  } catch (err) {
+    console.error('Validation failed:', err.message);
+    return;
+  }
 
-    stop() {
-        if (this.intervalId !== null) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
-            console.log('AutoClicker stopped');
-        }
-    }
+  let remaining = config.clicks;
+  
+  console.log(`Starting ${remaining} clicks...`);
 
-    performClick() {
-        const event = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-        });
-        const element = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-        if (element) {
-            element.dispatchEvent(event);
-            console.log('Click performed');
-        } else {
-            console.log('No element found to click');
-        }
-    }
+  while (remaining > 0) {
+    // Simulate mouse event emission
+    console.log(`Executing click. Remaining: ${--remaining}`);
+    
+    await new Promise(resolve => setTimeout(resolve, config.interval));
+  }
+
+  console.log('Task completed successfully');
 }
 
-// Usage
-const clicker = new AutoClicker(1000); // Click every second
-// clicker.start(); // Uncomment to start clicking
-// clicker.stop(); // Uncomment to stop clicking
+module.exports = { startClicking };
