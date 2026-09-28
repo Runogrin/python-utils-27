@@ -1,36 +1,45 @@
-// Helper function to simulate a click at specified coordinates
-function simulateClick(x, y) {
-    const element = document.elementFromPoint(x, y);
-    if (element) {
-        const event = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        });
-        element.dispatchEvent(event);
-    }
+/**
+ * Validates and sanitizes autoclicker input configuration
+ * @param {Object} data - Raw settings object
+ * @returns {Object} Cleaned configuration object
+ */
+function sanitizeClickConfig(data) {
+  const defaults = {
+    interval: 100,
+    button: 'left',
+    iterations: 1
+  };
+
+  return {
+    interval: Math.max(10, parseInt(data.interval) || defaults.interval),
+    button: ['left', 'right', 'middle'].includes(data.button) ? data.button : defaults.button,
+    iterations: Math.max(0, parseInt(data.iterations) || defaults.iterations)
+  };
 }
 
-// Helper function to set a delay
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * Formats click delay duration for human readability
+ * @param {number} ms - Delay in milliseconds
+ * @returns {string} Formatted duration string
+ */
+function formatDelay(ms) {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
 }
 
-// Helper function to generate random coordinates within the viewport
-function getRandomCoordinates() {
-    const x = Math.floor(Math.random() * window.innerWidth);
-    const y = Math.floor(Math.random() * window.innerHeight);
-    return { x, y };
+/**
+ * Calculates the estimated time to completion
+ * @param {number} count - Total iterations
+ * @param {number} delay - Delay per click
+ * @returns {number} Time in milliseconds
+ */
+function getEstimatedDuration(count, delay) {
+  if (count <= 0) return 0;
+  return count * delay;
 }
 
-// Helper function to enable autoclicker
-async function autoClicker(clicks, interval) {
-    for (let i = 0; i < clicks; i++) {
-        const { x, y } = getRandomCoordinates();
-        simulateClick(x, y);
-        await delay(interval);
-    }
-}
-
-// Expose the helper functions
-export { simulateClick, delay, getRandomCoordinates, autoClicker };
+module.exports = {
+  sanitizeClickConfig,
+  formatDelay,
+  getEstimatedDuration
+};
