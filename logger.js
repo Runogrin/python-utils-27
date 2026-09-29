@@ -1,28 +1,36 @@
 const fs = require('fs');
 const path = require('path');
-
-const LOG_FILE = path.join(__dirname, 'autoclicker.log');
+const { createLogger, format, transports } = require('winston');
+require('winston-daily-rotate-file');
 
 /**
- * Logs events to a local file with timestamps.
- * @param {string} level - Severity level (INFO, WARN, ERROR).
- * @param {string} message - Description of the event.
+ * Logger setup for python-utils-27 autoclicker.
+ * Rotates daily, keeps 14 days of logs.
  */
-function log(level, message) {
-  const timestamp = new Date().toISOString();
-  const formattedMessage = `[${timestamp}] [${level}] ${message}\n`;
+const logDir = path.join(__dirname, 'logs');
 
-  process.stdout.write(formattedMessage);
-
-  fs.appendFile(LOG_FILE, formattedMessage, (err) => {
-    if (err) {
-      console.error('Failed to write to log file:', err);
-    }
-  });
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
 }
 
-module.exports = {
-  info: (msg) => log('INFO', msg),
-  warn: (msg) => log('WARN', msg),
-  error: (msg) => log('ERROR', msg)
-};
+const fileRotateTransport = new transports.DailyRotateFile({
+  filename: path.join(logDir, 'autoclicker-%DATE%.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d'
+});
+
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
+  ),
+  transports: [
+    new transports.Console(),
+    fileRotateTransport
+  ]
+});
+
+module.exports = logger;
