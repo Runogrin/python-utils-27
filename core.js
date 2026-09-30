@@ -1,35 +1,60 @@
-const validateInput = (config) => {
-  if (typeof config.interval !== 'number' || config.interval < 50) {
-    throw new Error('Interval must be a number >= 50ms');
-  }
-  if (typeof config.clicks !== 'number' || config.clicks <= 0) {
-    throw new Error('Click count must be a positive integer');
-  }
-};
-
 /**
- * Main processing loop for the autoclicker
+ * Core processing loop for the autoclicker module.
+ * Validates click configuration before execution.
  */
-async function startClicking(config) {
-  try {
-    validateInput(config);
-  } catch (err) {
-    console.error('Validation failed:', err.message);
-    return;
+
+function validateClickParams(params) {
+  if (!params || typeof params !== 'object') {
+    return { valid: false, reason: 'Invalid parameters object' };
   }
 
-  let remaining = config.clicks;
-  
-  console.log(`Starting ${remaining} clicks...`);
+  const { interval, clickCount, position, button } = params;
 
-  while (remaining > 0) {
-    // Simulate mouse event emission
-    console.log(`Executing click. Remaining: ${--remaining}`);
-    
-    await new Promise(resolve => setTimeout(resolve, config.interval));
+  if (typeof interval !== 'number' || interval < 10 || interval > 3600000) {
+    return { valid: false, reason: 'Interval must be between 10ms and 3600000ms' };
   }
 
-  console.log('Task completed successfully');
+  if (typeof clickCount !== 'number' || clickCount < 0) {
+    return { valid: false, reason: 'Click count must be a non-negative integer' };
+  }
+
+  if (button && !['left', 'right', 'middle'].includes(button)) {
+    return { valid: false, reason: 'Button must be left, right, or middle' };
+  }
+
+  if (position) {
+    if (typeof position.x !== 'number' || typeof position.y !== 'number') {
+      return { valid: false, reason: 'Position x and y coordinates must be numbers' };
+    }
+    if (position.x < 0 || position.y < 0) {
+      return { valid: false, reason: 'Position coordinates cannot be negative' };
+    }
+  }
+
+  return { valid: true };
 }
 
-module.exports = { startClicking };
+async function processClickLoop(config, emitClick) {
+  const validation = validateClickParams(config);
+  if (!validation.valid) {
+    throw new Error(`Execution rejected: ${validation.reason}`);
+  }
+
+  const { interval, clickCount, position, button = 'left' } = config;
+  let executedClicks = 0;
+
+  while (clickCount === 0 || executedClicks < clickCount) {
+    emitClick({ position, button, index: executedClicks + 1 });
+    executedClicks++;
+
+    if (clickCount > 0 && executedClicks >= clickCount) {
+      break;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+
+  return { completed: true, totalClicks: executedClicks };
+}
+
+module.exports = { validateClickParams, processClickLoop };
