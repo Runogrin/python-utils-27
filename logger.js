@@ -1,36 +1,35 @@
 const fs = require('fs');
 const path = require('path');
-const { createLogger, format, transports } = require('winston');
-require('winston-daily-rotate-file');
+
+const LOG_DIR = './logs';
+const LOG_FILE = path.join(LOG_DIR, 'app.log');
+const MAX_SIZE = 1024 * 1024 * 5; // 5MB limit
 
 /**
- * Logger setup for python-utils-27 autoclicker.
- * Rotates daily, keeps 14 days of logs.
+ * Ensures log directory exists and manages file rotation
  */
-const logDir = path.join(__dirname, 'logs');
-
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+function rotateLogs() {
+    if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
+    
+    if (fs.existsSync(LOG_FILE)) {
+        const stats = fs.statSync(LOG_FILE);
+        if (stats.size >= MAX_SIZE) {
+            const timestamp = Date.now();
+            fs.renameSync(LOG_FILE, path.join(LOG_DIR, `app-${timestamp}.log`));
+        }
+    }
 }
 
-const fileRotateTransport = new transports.DailyRotateFile({
-  filename: path.join(logDir, 'autoclicker-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d'
-});
+/**
+ * Standardized logging with automatic rotation
+ */
+function logger(message, level = 'INFO') {
+    rotateLogs();
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] [${level}] ${message}\n`;
+    
+    process.stdout.write(logEntry);
+    fs.appendFileSync(LOG_FILE, logEntry, 'utf8');
+}
 
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
-  ),
-  transports: [
-    new transports.Console(),
-    fileRotateTransport
-  ]
-});
-
-module.exports = logger;
+module.exports = { logger };
