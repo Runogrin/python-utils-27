@@ -1,35 +1,35 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOG_DIR = './logs';
-const LOG_FILE = path.join(LOG_DIR, 'app.log');
-const MAX_SIZE = 1024 * 1024 * 5; // 5MB limit
-
 /**
- * Ensures log directory exists and manages file rotation
+ * Simple rotating logger for autoclicker sessions
+ * Keeps log files under a size threshold
  */
-function rotateLogs() {
-    if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
-    
-    if (fs.existsSync(LOG_FILE)) {
-        const stats = fs.statSync(LOG_FILE);
-        if (stats.size >= MAX_SIZE) {
-            const timestamp = Date.now();
-            fs.renameSync(LOG_FILE, path.join(LOG_DIR, `app-${timestamp}.log`));
-        }
+class Logger {
+  constructor(filePath = 'autoclicker.log', maxSize = 1024 * 1024) {
+    this.filePath = filePath;
+    this.maxSize = maxSize;
+  }
+
+  _rotate() {
+    if (fs.existsSync(this.filePath)) {
+      const stats = fs.statSync(this.filePath);
+      if (stats.size > this.maxSize) {
+        const backupPath = `${this.filePath}.old`;
+        fs.copyFileSync(this.filePath, backupPath);
+        fs.writeFileSync(this.filePath, '');
+      }
     }
-}
+  }
 
-/**
- * Standardized logging with automatic rotation
- */
-function logger(message, level = 'INFO') {
-    rotateLogs();
+  log(message) {
+    this._rotate();
     const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] [${level}] ${message}\n`;
+    const entry = `[${timestamp}] ${message}\n`;
     
-    process.stdout.write(logEntry);
-    fs.appendFileSync(LOG_FILE, logEntry, 'utf8');
+    console.log(entry.trim());
+    fs.appendFileSync(this.filePath, entry);
+  }
 }
 
-module.exports = { logger };
+module.exports = new Logger();
