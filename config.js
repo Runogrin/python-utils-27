@@ -1,34 +1,35 @@
 const fs = require('fs');
+const path = require('path');
 
 /**
- * Loads configuration from a local JSON file
- * Handles missing file, invalid syntax, and schema mismatches
+ * default configuration for autoclicker
  */
-function loadConfig(path) {
+const DEFAULT_CONFIG = {
+  interval: 100,
+  button: 'left',
+  maxClicks: 0,
+  autoStart: false
+};
+
+/**
+ * loads json config with fallback to defaults
+ * @param {string} filePath 
+ * @returns {Object}
+ */
+function loadConfig(filePath) {
   try {
-    if (!fs.existsSync(path)) {
-      throw new Error(`config file not found at ${path}`);
+    if (!fs.existsSync(filePath)) {
+      return { ...DEFAULT_CONFIG };
     }
 
-    const data = fs.readFileSync(path, 'utf8');
-    const config = JSON.parse(data);
+    const rawData = fs.readFileSync(filePath, 'utf8');
+    const userConfig = JSON.parse(rawData);
 
-    if (typeof config.interval !== 'number' || config.interval < 0) {
-      throw new Error('invalid interval: must be a positive number');
-    }
-
-    return {
-      interval: config.interval,
-      duration: config.duration || 0,
-      active: !!config.active
-    };
-  } catch (err) {
-    console.error('config loading failure:', err.message);
-    return {
-      interval: 1000,
-      duration: 0,
-      active: false
-    };
+    // merge defaults with provided keys
+    return { ...DEFAULT_CONFIG, ...userConfig };
+  } catch (error) {
+    console.error('configuration parse error, using defaults:', error.message);
+    return { ...DEFAULT_CONFIG };
   }
 }
 
