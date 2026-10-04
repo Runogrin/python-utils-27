@@ -1,36 +1,43 @@
+const config = {
+  interval: 100,
+  running: false,
+};
+
 /**
- * Performs a network operation with exponential backoff.
- * @param {Function} fn - Async function to execute.
- * @param {number} retries - Number of retry attempts.
- * @param {number} delay - Initial delay in milliseconds.
+ * Performs the click action at the given coordinates
  */
-async function retryNetworkOperation(fn, retries = 3, delay = 1000) {
-  let lastError;
-
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-      if (i < retries) {
-        const backoff = delay * Math.pow(2, i);
-        console.warn(`Attempt ${i + 1} failed. Retrying in ${backoff}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, backoff));
-      }
-    }
-  }
-
-  throw new Error(`Operation failed after ${retries} retries: ${lastError.message}`);
+function performClick(x, y) {
+  if (!config.running) return;
+  console.log(`Clicking at: ${x}, ${y}`);
+  // Simulating native click event
 }
 
 /**
- * Wrapper to safely execute click actions over network.
+ * Orchestrates the autoclicker main loop
  */
-async function safeClick(actionFn) {
-  return await retryNetworkOperation(actionFn, 3, 500);
+function startAutomation(x, y) {
+  if (config.running) return;
+  config.running = true;
+  
+  const loop = setInterval(() => {
+    if (!config.running) {
+      clearInterval(loop);
+      return;
+    }
+    performClick(x, y);
+  }, config.interval);
+}
+
+/**
+ * Terminates active automation processes
+ */
+function stopAutomation() {
+  config.running = false;
+  console.log('Automation halted successfully');
 }
 
 module.exports = {
-  retryNetworkOperation,
-  safeClick
+  startAutomation,
+  stopAutomation,
+  config
 };
