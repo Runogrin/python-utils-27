@@ -1,43 +1,28 @@
-const config = {
-  interval: 100,
-  running: false,
-};
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Performs the click action at the given coordinates
+ * Executes a function with exponential backoff for network operations
+ * @param {Function} fn - The network operation to execute
+ * @param {number} retries - Number of retry attempts
+ * @param {number} backoff - Initial delay in milliseconds
  */
-function performClick(x, y) {
-  if (!config.running) return;
-  console.log(`Clicking at: ${x}, ${y}`);
-  // Simulating native click event
-}
+async function retryNetworkOp(fn, retries = 3, backoff = 1000) {
+  let lastError;
 
-/**
- * Orchestrates the autoclicker main loop
- */
-function startAutomation(x, y) {
-  if (config.running) return;
-  config.running = true;
-  
-  const loop = setInterval(() => {
-    if (!config.running) {
-      clearInterval(loop);
-      return;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (i === retries) break;
+
+      const waitTime = backoff * Math.pow(2, i);
+      console.warn(`Retry ${i + 1}/${retries} after ${waitTime}ms error: ${err.message}`);
+      await delay(waitTime);
     }
-    performClick(x, y);
-  }, config.interval);
+  }
+
+  throw lastError;
 }
 
-/**
- * Terminates active automation processes
- */
-function stopAutomation() {
-  config.running = false;
-  console.log('Automation halted successfully');
-}
-
-module.exports = {
-  startAutomation,
-  stopAutomation,
-  config
-};
+module.exports = { retryNetworkOp };
