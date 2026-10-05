@@ -1,28 +1,63 @@
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const { performance } = require('perf_hooks');
 
-/**
- * Executes a function with exponential backoff for network operations
- * @param {Function} fn - The network operation to execute
- * @param {number} retries - Number of retry attempts
- * @param {number} backoff - Initial delay in milliseconds
- */
-async function retryNetworkOp(fn, retries = 3, backoff = 1000) {
-  let lastError;
+class HighPrecisionClicker {
+  constructor(options = {}) {
+    this.intervalMs = options.intervalMs || 100;
+    this.maxClicks = options.maxClicks || Infinity;
+    this.clickCount = 0;
+    this.isRunning = false;
+    this._timerId = null;
+    this._lastTick = 0;
+  }
 
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      if (i === retries) break;
+  // Optimized loop using high-resolution performance timers to prevent time drift
+  start(callback) {
+    if (this.isRunning) return;
+    
+    this.isRunning = true;
+    this.clickCount = 0;
+    this._lastTick = performance.now();
 
-      const waitTime = backoff * Math.pow(2, i);
-      console.warn(`Retry ${i + 1}/${retries} after ${waitTime}ms error: ${err.message}`);
-      await delay(waitTime);
+    const tick = () => {
+      if (!this.isRunning || this.clickCount >= this.maxClicks) {
+        this.stop();
+        return;
+      }
+
+      const now = performance.now();
+      const elapsed = now - this._lastTick;
+
+      if (elapsed >= this.intervalMs) {
+        // Adjust last tick time to compensate for execution lag
+        this._lastTick = now - (elapsed % this.intervalMs);
+        this.clickCount++;
+        
+        callback({
+          id: this.clickCount,
+          timestamp: now
+        });
+      }
+
+      // Use setImmediate for sub-millisecond check granularity
+      this._timerId = setImmediate(tick);
+    };
+
+    this._timerId = setImmediate(tick);
+  }
+
+  stop() {
+    this.isRunning = false;
+    if (this._timerId) {
+      clearImmediate(this._timerId);
+      this._timerId = null;
     }
   }
 
-  throw lastError;
+  updateInterval(newIntervalMs) {
+    if (typeof newIntervalMs === 'number' && newIntervalMs > 0) {
+      this.intervalMs = newIntervalMs;
+    }
+  }
 }
 
-module.exports = { retryNetworkOp };
+module.exports = HighPrecisionClicker;
