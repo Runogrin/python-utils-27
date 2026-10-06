@@ -1,39 +1,44 @@
-const buffer = new Uint32Array(1024);
-let cursor = 0;
-
 /**
- * optimized event dispatcher for click events
- * uses shared memory buffer to reduce garbage collection pressure
+ * Handles user input and ensures click parameters remain valid
  */
-const handleEvent = (event) => {
-  if (cursor >= 1024) {
-    cursor = 0;
+const validateClickParams = (params) => {
+  if (!params || typeof params !== 'object') {
+    throw new Error('invalid click configuration object');
   }
 
-  buffer[cursor++] = event.clientX;
-  buffer[cursor++] = event.clientY;
-  buffer[cursor++] = Date.now();
+  const { x, y, interval } = params;
 
-  if (cursor % 3 === 0) {
-    processBatch(buffer.subarray(cursor - 3, cursor));
+  if (typeof x !== 'number' || typeof y !== 'number') {
+    throw new Error('coordinates must be numeric values');
+  }
+
+  if (typeof interval !== 'number' || interval < 10) {
+    throw new Error('interval must be at least 10ms');
+  }
+
+  return true;
+};
+
+export const executeClickSafe = async (robot, params) => {
+  try {
+    validateClickParams(params);
+    await robot.moveMouse(params.x, params.y);
+    await robot.mouseClick();
+    return { success: true };
+  } catch (err) {
+    console.error(`[Autoclicker Error]: ${err.message}`);
+    return { 
+      success: false, 
+      error: err.message, 
+      timestamp: Date.now() 
+    };
   }
 };
 
-/**
- * dispatches clicks via direct low-level binding
- */
-function processBatch(data) {
-  const [x, y, timestamp] = data;
-  // native simulation path for performance
+export const handleProcessCleanup = (intervalId) => {
   try {
-    document.elementFromPoint(x, y)?.dispatchEvent(new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      view: window
-    }));
+    if (intervalId) clearInterval(intervalId);
   } catch (err) {
-    console.error('simulation failed at', timestamp, err);
+    console.error('failed to clear process interval', err);
   }
-}
-
-module.exports = { handleEvent };
+};
