@@ -1,42 +1,42 @@
 /**
- * Performs a simulated mouse click at specific coordinates.
- * @param {number} x - The horizontal coordinate.
- * @param {number} y - The vertical coordinate.
- * @param {number} delay - Delay in milliseconds before action.
- * @returns {Promise<boolean>} Success status of the click.
+ * Validates autoclicker configuration parameters
+ * @param {Object} config 
+ * @returns {boolean}
  */
-async function performClick(x, y, delay = 0) {
-  if (typeof x !== 'number' || typeof y !== 'number') {
-    throw new Error('Coordinates must be numeric values.');
-  }
-
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log(`Clicking at: ${x}, ${y}`);
-      resolve(true);
-    }, delay);
-  });
+function validateClickerConfig(config) {
+  const { interval, duration, targetX, targetY } = config;
+  return (
+    typeof interval === 'number' && interval >= 10 &&
+    typeof duration === 'number' && duration > 0 &&
+    Number.isInteger(targetX) && Number.isInteger(targetY)
+  );
 }
 
 /**
- * Calculates the interval based on clicks per second.
- * @param {number} cps - Desired clicks per second.
- * @returns {number} Interval in milliseconds.
+ * Formats click events into structured packet payloads
+ * @param {number} x 
+ * @param {number} y 
+ * @returns {Object}
  */
-function calculateInterval(cps) {
-  if (cps <= 0) return 1000;
-  return Math.floor(1000 / cps);
+function formatClickEvent(x, y) {
+  return {
+    timestamp: Date.now(),
+    position: { x, y },
+    event: 'mouse_click'
+  };
 }
 
 /**
- * Validates click bounds against screen dimensions.
- * @param {number} x - Horizontal coordinate.
- * @param {number} y - Vertical coordinate.
- * @param {Object} bounds - Screen width and height.
- * @returns {boolean} Whether coordinates are valid.
+ * Normalizes input delay sequences for the executor
+ * @param {Array<number>} delays 
+ * @returns {Array<number>}
  */
-function isWithinBounds(x, y, bounds) {
-  return x >= 0 && x <= bounds.width && y >= 0 && y <= bounds.height;
+function sanitizeDelays(delays) {
+  return delays.filter(d => d > 0).map(d => Math.floor(d));
 }
 
-module.exports = { performClick, calculateInterval, isWithinBounds };
+module.exports = {
+  validateClickerConfig,
+  formatClickEvent,
+  sanitizeDelays
+};
