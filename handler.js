@@ -1,44 +1,38 @@
+const eventQueue = [];
+const MAX_BATCH_SIZE = 50;
+let processing = false;
+
 /**
- * Handles user input and ensures click parameters remain valid
+ * Optimized event batching to minimize main thread blocking
+ * in the autoclicker core loop.
  */
-const validateClickParams = (params) => {
-  if (!params || typeof params !== 'object') {
-    throw new Error('invalid click configuration object');
-  }
+async function processBatch() {
+  if (processing || eventQueue.length === 0) return;
+  processing = true;
 
-  const { x, y, interval } = params;
-
-  if (typeof x !== 'number' || typeof y !== 'number') {
-    throw new Error('coordinates must be numeric values');
-  }
-
-  if (typeof interval !== 'number' || interval < 10) {
-    throw new Error('interval must be at least 10ms');
-  }
-
-  return true;
-};
-
-export const executeClickSafe = async (robot, params) => {
+  const batch = eventQueue.splice(0, MAX_BATCH_SIZE);
+  
   try {
-    validateClickParams(params);
-    await robot.moveMouse(params.x, params.y);
-    await robot.mouseClick();
-    return { success: true };
+    batch.forEach(event => {
+      if (typeof event.action === 'function') {
+        event.action(event.payload);
+      }
+    });
   } catch (err) {
-    console.error(`[Autoclicker Error]: ${err.message}`);
-    return { 
-      success: false, 
-      error: err.message, 
-      timestamp: Date.now() 
-    };
+    console.error('Batch processing error:', err);
+  } finally {
+    processing = false;
+    if (eventQueue.length > 0) {
+      setImmediate(processBatch);
+    }
   }
-};
+}
 
-export const handleProcessCleanup = (intervalId) => {
-  try {
-    if (intervalId) clearInterval(intervalId);
-  } catch (err) {
-    console.error('failed to clear process interval', err);
+function enqueueEvent(action, payload) {
+  eventQueue.push({ action, payload });
+  if (!processing) {
+    processBatch();
   }
-};
+}
+
+module.exports = { enqueueEvent };
