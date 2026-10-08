@@ -1,61 +1,41 @@
-// helpers.js - Autoclicker input validation helpers
-function validateInput(input) {
-  if (typeof input !== 'object' || input === null) {
-    return { isValid: false, message: 'Input must be a non-null object' };
+/**
+ * Validates autoclicker coordinates and intervals
+ * Prevents execution with invalid user inputs
+ */
+const validateCoordinates = (x, y) => {
+  if (typeof x !== 'number' || typeof y !== 'number') {
+    throw new Error('Coordinates must be numerical values');
   }
-  if (typeof input.x !== 'number' || isNaN(input.x) || input.x < 0) {
-    return { isValid: false, message: 'x coordinate must be a non-negative number' };
+  if (x < 0 || y < 0) {
+    throw new Error('Coordinates cannot be negative');
   }
-  if (typeof input.y !== 'number' || isNaN(input.y) || input.y < 0) {
-    return { isValid: false, message: 'y coordinate must be a non-negative number' };
-  }
-  if (input.delay !== undefined) {
-    if (typeof input.delay !== 'number' || isNaN(input.delay) || input.delay < 0) {
-      return { isValid: false, message: 'delay must be a non-negative number if provided' };
-    }
-  }
-  if (input.clicks !== undefined) {
-    if (typeof input.clicks !== 'number' || isNaN(input.clicks) || input.clicks <= 0) {
-      return { isValid: false, message: 'clicks must be a positive number if provided' };
-    }
-  }
-  return { isValid: true };
-}
-
-function processMainLoop(inputs) {
-  // Main processing loop for autoclicker
-  if (!Array.isArray(inputs) || inputs.length === 0) {
-    console.error('Invalid inputs: must provide non-empty array');
-    return;
-  }
-  let currentIndex = 0;
-  function loop() {
-    if (currentIndex >= inputs.length) {
-      console.log('Autoclicker sequence completed successfully');
-      return;
-    }
-    const currentInput = inputs[currentIndex];
-    // input validation in the main processing loop
-    const validationResult = validateInput(currentInput);
-    if (!validationResult.isValid) {
-      console.error(`Validation failed for input ${currentIndex}: ${validationResult.message}`);
-      currentIndex++;
-      setTimeout(loop, 0);
-      return;
-    }
-    console.log(`Processing click at position (${currentInput.x}, ${currentInput.y})`);
-    const delay = currentInput.delay || 1000;
-    const clicks = currentInput.clicks || 1;
-    for (let i = 0; i < clicks; i++) {
-      console.log(`  Simulated click ${i + 1} of ${clicks}`);
-    }
-    currentIndex++;
-    setTimeout(loop, delay);
-  }
-  loop();
-}
-
-module.exports = {
-  validateInput,
-  processMainLoop
+  return { x, y };
 };
+
+/**
+ * Safely parses delay inputs to avoid engine stalls
+ */
+const parseClickInterval = (interval) => {
+  const parsed = parseInt(interval, 10);
+  if (isNaN(parsed) || parsed < 50) {
+    console.warn('Interval below 50ms detected; resetting to 50ms safety floor');
+    return 50;
+  }
+  return parsed;
+};
+
+/**
+ * Wrapper for coordinate operations with boundary protection
+ */
+const getSafeExecutionData = (x, y, interval) => {
+  try {
+    const coords = validateCoordinates(x, y);
+    const delay = parseClickInterval(interval);
+    return { ...coords, delay };
+  } catch (error) {
+    console.error('Validation failed during configuration:', error.message);
+    return null;
+  }
+};
+
+module.exports = { getSafeExecutionData };
