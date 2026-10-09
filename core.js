@@ -1,63 +1,45 @@
-const { performance } = require('perf_hooks');
-
-class HighPrecisionClicker {
-  constructor(options = {}) {
-    this.intervalMs = options.intervalMs || 100;
-    this.maxClicks = options.maxClicks || Infinity;
-    this.clickCount = 0;
+class PrecisionClicker {
+  constructor(clickCallback, intervalMs = 100) {
+    this.clickCallback = clickCallback;
+    this.interval = intervalMs;
     this.isRunning = false;
-    this._timerId = null;
-    this._lastTick = 0;
+    this.expected = 0;
+    this.timeoutId = null;
   }
 
-  // Optimized loop using high-resolution performance timers to prevent time drift
-  start(callback) {
+  setInterval(intervalMs) {
+    // Ensure minimum interval is safe to prevent infinite rapid loops
+    this.interval = Math.max(1, intervalMs);
+  }
+
+  start() {
     if (this.isRunning) return;
-    
     this.isRunning = true;
-    this.clickCount = 0;
-    this._lastTick = performance.now();
-
-    const tick = () => {
-      if (!this.isRunning || this.clickCount >= this.maxClicks) {
-        this.stop();
-        return;
-      }
-
-      const now = performance.now();
-      const elapsed = now - this._lastTick;
-
-      if (elapsed >= this.intervalMs) {
-        // Adjust last tick time to compensate for execution lag
-        this._lastTick = now - (elapsed % this.intervalMs);
-        this.clickCount++;
-        
-        callback({
-          id: this.clickCount,
-          timestamp: now
-        });
-      }
-
-      // Use setImmediate for sub-millisecond check granularity
-      this._timerId = setImmediate(tick);
-    };
-
-    this._timerId = setImmediate(tick);
+    this.expected = performance.now() + this.interval;
+    this.timeoutId = setTimeout(() => this._tick(), this.interval);
   }
 
   stop() {
     this.isRunning = false;
-    if (this._timerId) {
-      clearImmediate(this._timerId);
-      this._timerId = null;
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
   }
 
-  updateInterval(newIntervalMs) {
-    if (typeof newIntervalMs === 'number' && newIntervalMs > 0) {
-      this.intervalMs = newIntervalMs;
-    }
+  _tick() {
+    if (!this.isRunning) return;
+
+    // Fire-and-forget execution to prevent blocking the scheduler
+    this.clickCallback();
+
+    // Calculate precise drift and compute dynamically adjusted interval
+    const drift = performance.now() - this.expected;
+    this.expected += this.interval;
+    const nextDelay = Math.max(0, this.interval - drift);
+
+    this.timeoutId = setTimeout(() => this._tick(), nextDelay);
   }
 }
 
-module.exports = HighPrecisionClicker;
+module.exports = PrecisionClicker;
