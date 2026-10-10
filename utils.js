@@ -1,48 +1,45 @@
-/**
- * Core autoclicker utility module
- * Implements high-precision event throttling
- */
-
-const CLICK_BUFFER_SIZE = 1000;
-const eventQueue = new Array(CLICK_BUFFER_SIZE);
-let queuePointer = 0;
+const robot = require('robotjs');
 
 /**
- * Throttled event processing to minimize CPU overhead
+ * Performs a safe autoclick action with edge case validation
+ * @param {number} x - Target horizontal coordinate
+ * @param {number} y - Target vertical coordinate
+ * @param {object} bounds - Screen resolution limits
  */
-function processEventQueue(clickAction) {
-  if (queuePointer === 0) return;
+function performClick(x, y, bounds = { width: 1920, height: 1080 }) {
+  try {
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      throw new Error('Coordinates must be numeric');
+    }
 
-  // Process batch to reduce context switching
-  for (let i = 0; i < queuePointer; i++) {
-    clickAction(eventQueue[i]);
-  }
+    if (x < 0 || y < 0 || x > bounds.width || y > bounds.height) {
+      console.warn(`Click coordinate ${x},${y} is out of bounds`);
+      return false;
+    }
 
-  queuePointer = 0;
-}
-
-/**
- * Optimized event registration
- */
-function enqueueEvent(event) {
-  if (queuePointer < CLICK_BUFFER_SIZE) {
-    eventQueue[queuePointer++] = event;
+    robot.moveMouse(x, y);
+    robot.mouseClick();
+    return true;
+  } catch (error) {
+    console.error('Click execution failure:', error.message);
+    return false;
   }
 }
 
 /**
- * Execution loop with requestAnimationFrame for frame synchronization
+ * Validates delay parameters for loop timing
+ * @param {number} interval - Milliseconds
  */
-function startEventLoop(callback) {
-  const loop = () => {
-    processEventQueue(callback);
-    requestAnimationFrame(loop);
-  };
-  
-  requestAnimationFrame(loop);
+function validateInterval(interval) {
+  const minInterval = 50;
+  const maxInterval = 60000;
+
+  if (typeof interval !== 'number' || interval < minInterval || interval > maxInterval) {
+    console.error('Invalid interval provided, reverting to safe default');
+    return 500;
+  }
+
+  return interval;
 }
 
-module.exports = {
-  enqueueEvent,
-  startEventLoop
-};
+module.exports = { performClick, validateInterval };
