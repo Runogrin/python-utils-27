@@ -1,42 +1,48 @@
 /**
- * Validates autoclicker configuration parameters
- * @param {Object} config 
- * @returns {boolean}
+ * Core autoclicker utility module
+ * Implements high-precision event throttling
  */
-function validateClickerConfig(config) {
-  const { interval, duration, targetX, targetY } = config;
-  return (
-    typeof interval === 'number' && interval >= 10 &&
-    typeof duration === 'number' && duration > 0 &&
-    Number.isInteger(targetX) && Number.isInteger(targetY)
-  );
+
+const CLICK_BUFFER_SIZE = 1000;
+const eventQueue = new Array(CLICK_BUFFER_SIZE);
+let queuePointer = 0;
+
+/**
+ * Throttled event processing to minimize CPU overhead
+ */
+function processEventQueue(clickAction) {
+  if (queuePointer === 0) return;
+
+  // Process batch to reduce context switching
+  for (let i = 0; i < queuePointer; i++) {
+    clickAction(eventQueue[i]);
+  }
+
+  queuePointer = 0;
 }
 
 /**
- * Formats click events into structured packet payloads
- * @param {number} x 
- * @param {number} y 
- * @returns {Object}
+ * Optimized event registration
  */
-function formatClickEvent(x, y) {
-  return {
-    timestamp: Date.now(),
-    position: { x, y },
-    event: 'mouse_click'
+function enqueueEvent(event) {
+  if (queuePointer < CLICK_BUFFER_SIZE) {
+    eventQueue[queuePointer++] = event;
+  }
+}
+
+/**
+ * Execution loop with requestAnimationFrame for frame synchronization
+ */
+function startEventLoop(callback) {
+  const loop = () => {
+    processEventQueue(callback);
+    requestAnimationFrame(loop);
   };
-}
-
-/**
- * Normalizes input delay sequences for the executor
- * @param {Array<number>} delays 
- * @returns {Array<number>}
- */
-function sanitizeDelays(delays) {
-  return delays.filter(d => d > 0).map(d => Math.floor(d));
+  
+  requestAnimationFrame(loop);
 }
 
 module.exports = {
-  validateClickerConfig,
-  formatClickEvent,
-  sanitizeDelays
+  enqueueEvent,
+  startEventLoop
 };
