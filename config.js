@@ -1,36 +1,67 @@
-const fs = require('fs');
-const path = require('path');
-
 /**
- * default configuration for autoclicker
+ * @typedef {'left' | 'right' | 'middle'} MouseButton
+ * @typedef {'single' | 'double'} ClickType
+ * 
+ * @typedef {Object} AutoclickerConfig
+ * @property {number} intervalMs - Delay between clicks in milliseconds.
+ * @property {MouseButton} button - Target mouse button for click events.
+ * @property {ClickType} clickType - Type of click action to perform.
+ * @property {number} maxClicks - Maximum clicks allowed (0 for unlimited).
+ * @property {string} hotkey - Key combination used to toggle clicking.
  */
+
+/** @type {AutoclickerConfig} */
 const DEFAULT_CONFIG = {
-  interval: 100,
+  intervalMs: 100,
   button: 'left',
+  clickType: 'single',
   maxClicks: 0,
-  autoStart: false
+  hotkey: 'F6'
 };
 
 /**
- * loads json config with fallback to defaults
- * @param {string} filePath 
- * @returns {Object}
+ * Validates and normalizes raw user options into a complete configuration.
+ *
+ * @param {Partial<AutoclickerConfig>} [userOptions={}] - Partial user configuration overrides.
+ * @returns {AutoclickerConfig} Fully resolved autoclicker configuration object.
  */
-function loadConfig(filePath) {
-  try {
-    if (!fs.existsSync(filePath)) {
-      return { ...DEFAULT_CONFIG };
-    }
+function createConfig(userOptions = {}) {
+  const config = { ...DEFAULT_CONFIG, ...userOptions };
 
-    const rawData = fs.readFileSync(filePath, 'utf8');
-    const userConfig = JSON.parse(rawData);
-
-    // merge defaults with provided keys
-    return { ...DEFAULT_CONFIG, ...userConfig };
-  } catch (error) {
-    console.error('configuration parse error, using defaults:', error.message);
-    return { ...DEFAULT_CONFIG };
+  if (typeof config.intervalMs !== 'number' || config.intervalMs < 1) {
+    config.intervalMs = DEFAULT_CONFIG.intervalMs;
   }
+
+  const validButtons = ['left', 'right', 'middle'];
+  if (!validButtons.includes(config.button)) {
+    config.button = 'left';
+  }
+
+  const validClickTypes = ['single', 'double'];
+  if (!validClickTypes.includes(config.clickType)) {
+    config.clickType = 'single';
+  }
+
+  if (typeof config.maxClicks !== 'number' || config.maxClicks < 0) {
+    config.maxClicks = 0;
+  }
+
+  return config;
 }
 
-module.exports = { loadConfig };
+/**
+ * Formats a configuration object into a short readable status line.
+ *
+ * @param {AutoclickerConfig} config - The configuration object to format.
+ * @returns {string} Human-readable summary of settings.
+ */
+function formatConfigSummary(config) {
+  const limitText = config.maxClicks > 0 ? `${config.maxClicks} clicks` : 'unlimited';
+  return `Interval: ${config.intervalMs}ms | Button: ${config.button} (${config.clickType}) | Limit: ${limitText} | Key: ${config.hotkey}`;
+}
+
+module.exports = {
+  DEFAULT_CONFIG,
+  createConfig,
+  formatConfigSummary
+};
