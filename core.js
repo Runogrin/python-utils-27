@@ -1,45 +1,41 @@
-class PrecisionClicker {
-  constructor(clickCallback, intervalMs = 100) {
-    this.clickCallback = clickCallback;
-    this.interval = intervalMs;
-    this.isRunning = false;
-    this.expected = 0;
-    this.timeoutId = null;
-  }
+/**
+ * @typedef {Object} ClickConfig
+ * @property {number} interval - Delay in ms
+ * @property {number} duration - Max duration in ms
+ */
 
-  setInterval(intervalMs) {
-    // Ensure minimum interval is safe to prevent infinite rapid loops
-    this.interval = Math.max(1, intervalMs);
-  }
-
-  start() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this.expected = performance.now() + this.interval;
-    this.timeoutId = setTimeout(() => this._tick(), this.interval);
-  }
-
-  stop() {
-    this.isRunning = false;
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-      this.timeoutId = null;
-    }
-  }
-
-  _tick() {
-    if (!this.isRunning) return;
-
-    // Fire-and-forget execution to prevent blocking the scheduler
-    this.clickCallback();
-
-    // Calculate precise drift and compute dynamically adjusted interval
-    const drift = performance.now() - this.expected;
-    this.expected += this.interval;
-    const nextDelay = Math.max(0, this.interval - drift);
-
-    this.timeoutId = setTimeout(() => this._tick(), nextDelay);
+/**
+ * Executes a simulated click event at coordinates
+ * @param {number} x - Horizontal position
+ * @param {number} y - Vertical position
+ * @returns {void}
+ */
+function simulateClick(x, y) {
+  const element = document.elementFromPoint(x, y);
+  if (element) {
+    element.click();
   }
 }
 
-module.exports = PrecisionClicker;
+/**
+ * Runs an autoclicker loop with interval enforcement
+ * @param {number} x - Horizontal coordinate
+ * @param {number} y - Vertical coordinate
+ * @param {ClickConfig} config - Execution configuration
+ * @returns {number} Interval identifier
+ */
+function startAutoclicker(x, y, config) {
+  const startTime = Date.now();
+
+  const intervalId = setInterval(() => {
+    if (Date.now() - startTime > config.duration) {
+      clearInterval(intervalId);
+      return;
+    }
+    simulateClick(x, y);
+  }, config.interval);
+
+  return intervalId;
+}
+
+export { simulateClick, startAutoclicker };
