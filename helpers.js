@@ -1,41 +1,32 @@
 /**
- * Validates autoclicker coordinates and intervals
- * Prevents execution with invalid user inputs
+ * Retries an asynchronous function with exponential backoff.
+ * Useful for stable network operations in the autoclicker.
  */
-const validateCoordinates = (x, y) => {
-  if (typeof x !== 'number' || typeof y !== 'number') {
-    throw new Error('Coordinates must be numerical values');
+async function retryOperation(fn, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isLastAttempt = i === retries - 1;
+      if (isLastAttempt) throw error;
+
+      const backoff = delay * Math.pow(2, i);
+      console.warn(`Attempt ${i + 1} failed. Retrying in ${backoff}ms...`);
+      await new Promise(resolve => setTimeout(resolve, backoff));
+    }
   }
-  if (x < 0 || y < 0) {
-    throw new Error('Coordinates cannot be negative');
-  }
-  return { x, y };
-};
+}
 
 /**
- * Safely parses delay inputs to avoid engine stalls
+ * Helper for standardized fetch calls with retry logic
  */
-const parseClickInterval = (interval) => {
-  const parsed = parseInt(interval, 10);
-  if (isNaN(parsed) || parsed < 50) {
-    console.warn('Interval below 50ms detected; resetting to 50ms safety floor');
-    return 50;
-  }
-  return parsed;
-};
+async function fetchWithRetry(url, options = {}) {
+  return await retryOperation(() => 
+    fetch(url, options).then(res => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
+    })
+  );
+}
 
-/**
- * Wrapper for coordinate operations with boundary protection
- */
-const getSafeExecutionData = (x, y, interval) => {
-  try {
-    const coords = validateCoordinates(x, y);
-    const delay = parseClickInterval(interval);
-    return { ...coords, delay };
-  } catch (error) {
-    console.error('Validation failed during configuration:', error.message);
-    return null;
-  }
-};
-
-module.exports = { getSafeExecutionData };
+module.exports = { retryOperation, fetchWithRetry };
