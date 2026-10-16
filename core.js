@@ -1,41 +1,37 @@
 /**
- * @typedef {Object} ClickConfig
- * @property {number} interval - Delay in ms
- * @property {number} duration - Max duration in ms
+ * Core autoclicker utility functions for python-utils-27
  */
 
-/**
- * Executes a simulated click event at coordinates
- * @param {number} x - Horizontal position
- * @param {number} y - Vertical position
- * @returns {void}
- */
-function simulateClick(x, y) {
-  const element = document.elementFromPoint(x, y);
-  if (element) {
-    element.click();
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+const clickElement = (selector) => {
+  const el = document.querySelector(selector);
+  if (el) {
+    el.click();
+    return true;
   }
-}
+  return false;
+};
 
-/**
- * Runs an autoclicker loop with interval enforcement
- * @param {number} x - Horizontal coordinate
- * @param {number} y - Vertical coordinate
- * @param {ClickConfig} config - Execution configuration
- * @returns {number} Interval identifier
- */
-function startAutoclicker(x, y, config) {
-  const startTime = Date.now();
+const humanizeDelay = (baseDelay, jitter = 100) => {
+  return baseDelay + getRandomInt(-jitter, jitter);
+};
 
-  const intervalId = setInterval(() => {
-    if (Date.now() - startTime > config.duration) {
-      clearInterval(intervalId);
-      return;
-    }
-    simulateClick(x, y);
-  }, config.interval);
+const waitForElement = async (selector, timeout = 5000) => {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    if (document.querySelector(selector)) return true;
+    await sleep(200);
+  }
+  return false;
+};
 
-  return intervalId;
-}
-
-export { simulateClick, startAutoclicker };
+module.exports = {
+  sleep,
+  getRandomInt,
+  clickElement,
+  humanizeDelay,
+  waitForElement
+};
