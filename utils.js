@@ -1,37 +1,35 @@
 /**
- * Autoclicker processing loop with input validation
- * Validates click intervals and coordinate bounds
+ * Autoclicker core utility for event simulation
+ * Handles coordinate validation and input constraints
  */
 
-const validateInput = (config) => {
-  const { interval, x, y } = config;
-
-  if (typeof interval !== 'number' || interval < 50) {
-    throw new Error('Invalid interval: must be a number >= 50ms');
+const validateCoordinates = (x, y) => {
+  if (typeof x !== 'number' || typeof y !== 'number') {
+    throw new TypeError('coordinates must be numeric values');
   }
-
-  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0) {
-    throw new Error('Invalid coordinates: must be non-negative integers');
+  if (x < 0 || y < 0) {
+    throw new RangeError('coordinates cannot be negative');
   }
-
-  return true;
+  return { x, y };
 };
 
-const runClickerLoop = async (config, clickAction) => {
+const performClick = (x, y, delay = 0) => {
   try {
-    validateInput(config);
+    const coords = validateCoordinates(x, y);
+    
+    // Simulate native click event with safety timeout
+    setTimeout(() => {
+      console.log(`Clicking at: ${coords.x}, ${coords.y}`);
+      // Implementation logic for robotjs or internal driver
+    }, delay);
 
-    console.log(`Starting loop at (${config.x}, ${config.y})`);
-
-    while (true) {
-      await new Promise(resolve => setTimeout(resolve, config.interval));
-      
-      // Perform the click at validated coordinates
-      clickAction(config.x, config.y);
+  } catch (error) {
+    if (error instanceof TypeError || error instanceof RangeError) {
+      console.error(`Input error: ${error.message}`);
+    } else {
+      console.error('Unexpected automation failure', error);
     }
-  } catch (err) {
-    console.error(`Loop termination: ${err.message}`);
   }
 };
 
-module.exports = { runClickerLoop };
+module.exports = { performClick };
