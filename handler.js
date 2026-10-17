@@ -1,35 +1,47 @@
+const robot = require('robotjs');
+
 /**
- * Main processing loop for click events
- * Validates inputs before trigger execution
+ * Executes a click with input validation
+ * and safe boundaries check
  */
-const processClickEvent = (config, coordinates) => {
-  const { x, y, interval } = coordinates;
-
-  // Validate coordinate boundaries
-  if (typeof x !== 'number' || typeof y !== 'number' || x < 0 || y < 0) {
-    console.error('Invalid screen coordinates provided');
-    return false;
-  }
-
-  // Validate timing constraints
-  if (typeof interval !== 'number' || interval < 50) {
-    console.warn('Interval below safe threshold, resetting to 50ms');
-    coordinates.interval = 50;
-  }
-
+function safeClick(x, y) {
   try {
-    // Simulation of the click action
-    executeClick(coordinates.x, coordinates.y);
-    return true;
-  } catch (err) {
-    console.error('Execution failure:', err.message);
-    return false;
-  }
-};
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      throw new Error('Coordinates must be numeric values');
+    }
 
-function executeClick(x, y) {
-  // Core logic interface for OS input simulation
-  process.stdout.write(`Clicking at ${x}, ${y}\n`);
+    const screenSize = robot.getScreenSize();
+
+    if (x < 0 || y < 0 || x > screenSize.width || y > screenSize.height) {
+      throw new Error(`Coordinates ${x}, ${y} out of screen bounds`);
+    }
+
+    robot.moveMouse(x, y);
+    robot.mouseClick();
+    return { success: true };
+
+  } catch (err) {
+    console.error(`Click execution failure: ${err.message}`);
+    return { success: false, error: err.message };
+  }
 }
 
-module.exports = { processClickEvent };
+/**
+ * Automated click loop with abort mechanism
+ */
+async function startClickLoop(x, y, interval) {
+  if (interval < 50) {
+    throw new Error('Interval below 50ms risks system instability');
+  }
+
+  let active = true;
+  const timer = setInterval(() => {
+    if (!active) clearInterval(timer);
+    const result = safeClick(x, y);
+    if (!result.success) active = false;
+  }, interval);
+
+  return () => { active = false; };
+}
+
+module.exports = { safeClick, startClickLoop };
