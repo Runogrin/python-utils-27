@@ -1,35 +1,51 @@
 /**
- * Autoclicker core utility for event simulation
- * Handles coordinate validation and input constraints
+ * Validates and sanitizes autoclicker configuration objects.
+ * Ensures intervals and delay settings fall within safe bounds.
  */
+const validateClickConfig = (config) => {
+  const MIN_INTERVAL = 50;
+  const MAX_INTERVAL = 60000;
 
-const validateCoordinates = (x, y) => {
-  if (typeof x !== 'number' || typeof y !== 'number') {
-    throw new TypeError('coordinates must be numeric values');
+  if (!config || typeof config !== 'object') {
+    throw new Error('Invalid configuration object');
   }
-  if (x < 0 || y < 0) {
-    throw new RangeError('coordinates cannot be negative');
-  }
-  return { x, y };
+
+  const sanitized = {
+    interval: Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, config.interval || 100)),
+    button: ['left', 'right', 'middle'].includes(config.button) ? config.button : 'left',
+    repeat: typeof config.repeat === 'boolean' ? config.repeat : true
+  };
+
+  return sanitized;
 };
 
-const performClick = (x, y, delay = 0) => {
-  try {
-    const coords = validateCoordinates(x, y);
-    
-    // Simulate native click event with safety timeout
-    setTimeout(() => {
-      console.log(`Clicking at: ${coords.x}, ${coords.y}`);
-      // Implementation logic for robotjs or internal driver
-    }, delay);
+/**
+ * Formats click sequence data for output stream.
+ */
+const formatClickEvent = (x, y, timestamp = Date.now()) => {
+  return JSON.stringify({
+    coordinates: { x, y },
+    ts: timestamp,
+    action: 'click'
+  });
+};
 
-  } catch (error) {
-    if (error instanceof TypeError || error instanceof RangeError) {
-      console.error(`Input error: ${error.message}`);
-    } else {
-      console.error('Unexpected automation failure', error);
+/**
+ * Throttles execution rate to prevent UI thread blocking.
+ */
+const createThrottledExecutor = (fn, delay) => {
+  let lastCall = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      return fn(...args);
     }
-  }
+  };
 };
 
-module.exports = { performClick };
+module.exports = {
+  validateClickConfig,
+  formatClickEvent,
+  createThrottledExecutor
+};
