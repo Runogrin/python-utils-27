@@ -1,51 +1,44 @@
 /**
- * Validates and sanitizes autoclicker configuration objects.
- * Ensures intervals and delay settings fall within safe bounds.
+ * Performs a validated click action for the autoclicker module
+ * @param {number} x - Target x coordinate
+ * @param {number} y - Target y coordinate
  */
-const validateClickConfig = (config) => {
-  const MIN_INTERVAL = 50;
-  const MAX_INTERVAL = 60000;
+function performClick(x, y) {
+  try {
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      throw new Error('Coordinates must be numeric values');
+    }
 
-  if (!config || typeof config !== 'object') {
-    throw new Error('Invalid configuration object');
+    if (x < 0 || y < 0) {
+      throw new RangeError('Coordinates cannot be negative');
+    }
+
+    // Simulated platform-specific click logic
+    console.log(`Executing click at [${x}, ${y}]`);
+    return { success: true, timestamp: Date.now() };
+  } catch (error) {
+    console.error(`Click failed: ${error.message}`);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Validates interval configuration for bot cycles
+ * @param {number} ms - Delay in milliseconds
+ */
+function validateInterval(ms) {
+  const MIN_DELAY = 50;
+  
+  if (!Number.isFinite(ms)) {
+    throw new TypeError('Interval must be a finite number');
   }
 
-  const sanitized = {
-    interval: Math.max(MIN_INTERVAL, Math.min(MAX_INTERVAL, config.interval || 100)),
-    button: ['left', 'right', 'middle'].includes(config.button) ? config.button : 'left',
-    repeat: typeof config.repeat === 'boolean' ? config.repeat : true
-  };
+  if (ms < MIN_DELAY) {
+    console.warn(`Interval ${ms}ms too low, clamping to ${MIN_DELAY}ms`);
+    return MIN_DELAY;
+  }
 
-  return sanitized;
-};
+  return ms;
+}
 
-/**
- * Formats click sequence data for output stream.
- */
-const formatClickEvent = (x, y, timestamp = Date.now()) => {
-  return JSON.stringify({
-    coordinates: { x, y },
-    ts: timestamp,
-    action: 'click'
-  });
-};
-
-/**
- * Throttles execution rate to prevent UI thread blocking.
- */
-const createThrottledExecutor = (fn, delay) => {
-  let lastCall = 0;
-  return (...args) => {
-    const now = Date.now();
-    if (now - lastCall >= delay) {
-      lastCall = now;
-      return fn(...args);
-    }
-  };
-};
-
-module.exports = {
-  validateClickConfig,
-  formatClickEvent,
-  createThrottledExecutor
-};
+module.exports = { performClick, validateInterval };
