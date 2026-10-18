@@ -1,47 +1,36 @@
-const robot = require('robotjs');
-
 /**
- * Executes a click with input validation
- * and safe boundaries check
+ * Handles sanitization and validation of autoclicker configuration
+ * @param {Object} data - The raw input data from settings
+ * @returns {Object|null} - Sanitized data or null if invalid
  */
-function safeClick(x, y) {
-  try {
-    if (typeof x !== 'number' || typeof y !== 'number') {
-      throw new Error('Coordinates must be numeric values');
-    }
+function sanitizeConfig(data) {
+  if (!data || typeof data !== 'object') return null;
 
-    const screenSize = robot.getScreenSize();
+  const sanitized = {
+    interval: Math.max(10, parseInt(data.interval) || 100),
+    clicksPerBurst: Math.max(1, parseInt(data.clicksPerBurst) || 1),
+    randomization: Math.min(0.5, Math.max(0, parseFloat(data.randomization) || 0.05)),
+    enabled: !!data.enabled
+  };
 
-    if (x < 0 || y < 0 || x > screenSize.width || y > screenSize.height) {
-      throw new Error(`Coordinates ${x}, ${y} out of screen bounds`);
-    }
-
-    robot.moveMouse(x, y);
-    robot.mouseClick();
-    return { success: true };
-
-  } catch (err) {
-    console.error(`Click execution failure: ${err.message}`);
-    return { success: false, error: err.message };
-  }
+  return sanitized;
 }
 
 /**
- * Automated click loop with abort mechanism
+ * Formats click coordinates for browser automation injection
+ * @param {number} x - Horizontal coordinate
+ * @param {number} y - Vertical coordinate
+ * @returns {Object} - Coordinate object
  */
-async function startClickLoop(x, y, interval) {
-  if (interval < 50) {
-    throw new Error('Interval below 50ms risks system instability');
-  }
-
-  let active = true;
-  const timer = setInterval(() => {
-    if (!active) clearInterval(timer);
-    const result = safeClick(x, y);
-    if (!result.success) active = false;
-  }, interval);
-
-  return () => { active = false; };
+function formatCoordinates(x, y) {
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    timestamp: Date.now()
+  };
 }
 
-module.exports = { safeClick, startClickLoop };
+module.exports = {
+  sanitizeConfig,
+  formatCoordinates
+};
