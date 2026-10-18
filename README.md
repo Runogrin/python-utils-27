@@ -1,53 +1,44 @@
 # python-utils-27
 
-A high-performance, cross-platform autoclicker built with Node.js and RobotJS. This tool enables automated mouse interactions for repetitive tasks, testing, and gaming scenarios with minimal resource overhead.
+A high-performance JavaScript-based autoclicker designed for rapid automation tasks. This utility leverages Node.js event loops to provide precise, low-latency clicking capabilities for desktop applications.
 
 ## Features
 
-*   **Configurable Interval Control:** Set millisecond-precise clicking speeds to match any workflow requirement.
-*   **Customizable Keybinds:** Toggle the autoclicker on and off using global hotkeys, ensuring seamless integration with your active window.
-*   **Mouse Tracking Automation:** Supports fixed-coordinate clicking or dynamic follow-the-cursor modes.
-*   **Low-Latency Engine:** Built on native bindings for immediate input response without input lag.
+*   **Precision Timing:** Configure click intervals down to the millisecond using a non-blocking engine.
+*   **Customizable Click Patterns:** Toggle between single-target clicking, burst modes, and randomized jitter intervals.
+*   **Global Hotkey Support:** Bind start/stop functions to specific keyboard shortcuts for seamless integration during workflows.
+*   **Smart Target Locking:** Automatically detect and lock onto specific screen coordinates or UI elements via pixel color matching.
 
 ## Installation
 
-Ensure you have [Node.js](https://nodejs.org/) installed, then follow these steps:
+Ensure you have [Node.js](https://nodejs.org/) installed (v16+ recommended). Clone the repository and install the required dependencies:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Developer/python-utils-27.git
-   cd python-utils-27
-   ```
-
-2. Install the necessary dependencies:
-   ```bash
-   npm install
-   ```
-
-*(Note: Requires build tools for your OS to compile RobotJS native modules: `npm install --global --production windows-build-tools` on Windows or `xcode-select --install` on macOS.)*
+```bash
+git clone https://github.com/Developer/python-utils-27.git
+cd python-utils-27
+npm install
+```
 
 ## Usage
 
-Start the clicker with your preferred configuration via the command line:
+You can launch the autoclicker by running the primary script. Customize the configuration in `config.json` before starting the execution:
 
 ```bash
-# Start clicking every 100ms
-node index.js --interval 100
+# Basic start command
+node index.js --interval 50 --button left
 ```
 
-To run it in your own scripts:
-
-```javascript
-const autoclicker = require('./lib/clicker');
-
-// Initialize with 50ms delay
-autoclicker.start({ interval: 50 });
-
-// Stop after 10 seconds
-setTimeout(() => {
-    autoclicker.stop();
-}, 10000);
+### Example Config (`config.json`)
+```json
+{
+  "interval_ms": 100,
+  "trigger_key": "F6",
+  "randomize_delay": true,
+  "max_clicks": 0
+}
 ```
+
+Once running, press your assigned `trigger_key` to activate the automation. Ensure you run your terminal with appropriate accessibility permissions (macOS/Windows) to allow the utility to control mouse events.
 
 ## License
 
