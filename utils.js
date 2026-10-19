@@ -1,44 +1,29 @@
 /**
- * Performs a validated click action for the autoclicker module
- * @param {number} x - Target x coordinate
- * @param {number} y - Target y coordinate
+ * Mouse and timing helper utilities for autoclicker
  */
-function performClick(x, y) {
-  try {
-    if (typeof x !== 'number' || typeof y !== 'number') {
-      throw new Error('Coordinates must be numeric values');
-    }
 
-    if (x < 0 || y < 0) {
-      throw new RangeError('Coordinates cannot be negative');
-    }
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Simulated platform-specific click logic
-    console.log(`Executing click at [${x}, ${y}]`);
-    return { success: true, timestamp: Date.now() };
-  } catch (error) {
-    console.error(`Click failed: ${error.message}`);
-    return { success: false, error: error.message };
-  }
-}
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-/**
- * Validates interval configuration for bot cycles
- * @param {number} ms - Delay in milliseconds
- */
-function validateInterval(ms) {
-  const MIN_DELAY = 50;
-  
-  if (!Number.isFinite(ms)) {
-    throw new TypeError('Interval must be a finite number');
-  }
+const validateCoordinates = (x, y) => {
+  const isNumber = (val) => typeof val === 'number' && !isNaN(val);
+  return isNumber(x) && isNumber(y) && x >= 0 && y >= 0;
+};
 
-  if (ms < MIN_DELAY) {
-    console.warn(`Interval ${ms}ms too low, clamping to ${MIN_DELAY}ms`);
-    return MIN_DELAY;
-  }
+const getClickJitter = (base, variance) => {
+  const jitter = getRandomInt(-variance, variance);
+  return Math.max(0, base + jitter);
+};
 
-  return ms;
-}
+const formatTimestamp = () => {
+  return new Date().toISOString().replace('T', ' ').substring(0, 19);
+};
 
-module.exports = { performClick, validateInterval };
+module.exports = {
+  sleep,
+  getRandomInt,
+  validateCoordinates,
+  getClickJitter,
+  formatTimestamp
+};
