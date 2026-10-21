@@ -1,30 +1,36 @@
-const fs = require('fs');
-const path = require('path');
-
-const LOG_DIR = path.join(__dirname, 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'autoclicker.log');
-const MAX_SIZE = 1024 * 1024 * 5; // 5MB
-
-if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR);
-}
-
 /**
- * Logs messages with basic file rotation logic
- * @param {string} message 
+ * Autoclicker Logger Utility
+ * Standardized console outputs for session tracking
  */
-function log(message) {
+
+const LOG_LEVELS = {
+  INFO: 'INFO',
+  WARN: 'WARN',
+  ERROR: 'ERROR'
+};
+
+class Logger {
+  constructor(prefix = '[python-utils-27]') {
+    this.prefix = prefix;
+  }
+
+  _format(level, message) {
     const timestamp = new Date().toISOString();
-    const entry = `[${timestamp}] ${message}\n`;
+    return `${timestamp} ${this.prefix} [${level}] ${message}`;
+  }
 
-    if (fs.existsSync(LOG_FILE) && fs.statSync(LOG_FILE).size > MAX_SIZE) {
-        const backup = LOG_FILE + '.old';
-        if (fs.existsSync(backup)) fs.unlinkSync(backup);
-        fs.renameSync(LOG_FILE, backup);
-    }
+  info(message) {
+    console.log(this._format(LOG_LEVELS.INFO, message));
+  }
 
-    fs.appendFileSync(LOG_FILE, entry);
-    console.log(entry.trim());
+  warn(message) {
+    console.warn(this._format(LOG_LEVELS.WARN, message));
+  }
+
+  error(message, error = null) {
+    const msg = error ? `${message}: ${error.message}` : message;
+    console.error(this._format(LOG_LEVELS.ERROR, msg));
+  }
 }
 
-module.exports = { log };
+module.exports = new Logger();
