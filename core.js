@@ -1,37 +1,41 @@
 /**
- * Core autoclicker utility functions for python-utils-27
+ * Core autoclicker execution module
  */
+const performanceBuffer = new Float64Array(1000);
+let bufferIndex = 0;
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * Execution loop with optimized task scheduling
+ */
+function executeClick(target, interval) {
+  const now = performance.now();
 
-const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  // Cache timing data for drift compensation
+  performanceBuffer[bufferIndex % 1000] = now;
+  bufferIndex++;
 
-const clickElement = (selector) => {
-  const el = document.querySelector(selector);
-  if (el) {
-    el.click();
-    return true;
-  }
-  return false;
-};
+  // RequestAnimationFrame allows for browser-synced execution
+  // instead of high-frequency setInterval drifting
+  const request = requestAnimationFrame(() => {
+    try {
+      target.dispatchEvent(new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+    } catch (err) {
+      console.error('Click injection failure:', err);
+    }
+  });
 
-const humanizeDelay = (baseDelay, jitter = 100) => {
-  return baseDelay + getRandomInt(-jitter, jitter);
-};
+  return request;
+}
 
-const waitForElement = async (selector, timeout = 5000) => {
-  const start = Date.now();
-  while (Date.now() - start < timeout) {
-    if (document.querySelector(selector)) return true;
-    await sleep(200);
-  }
-  return false;
-};
+/**
+ * Batch update to clear stale references
+ */
+function clearExecution(id) {
+  cancelAnimationFrame(id);
+}
 
-module.exports = {
-  sleep,
-  getRandomInt,
-  clickElement,
-  humanizeDelay,
-  waitForElement
-};
+module.exports = { executeClick, clearExecution };
