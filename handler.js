@@ -1,55 +1,42 @@
-class ClickHandler {
-  constructor(config = {}) {
-    this.maxRetries = config.maxRetries || 3;
-    this.screenBounds = config.screenBounds || { width: 1920, height: 1080 };
-  }
+/**
+ * Executes a network operation with exponential backoff.
+ * @param {Function} fn - Async function to execute.
+ * @param {number} retries - Max retry attempts.
+ * @param {number} delay - Initial delay in milliseconds.
+ */
+async function withRetry(fn, retries = 3, delay = 1000) {
+  let lastError;
 
-  validateCoordinates(x, y) {
-    if (typeof x !== 'number' || typeof y !== 'number') {
-      throw new TypeError(`Coordinates must be numbers. Received x: ${typeof x}, y: ${typeof y}`);
-    }
-    if (Number.isNaN(x) || Number.isNaN(y)) {
-      throw new Error('Coordinates cannot be NaN');
-    }
-    if (x < 0 || y < 0 || x > this.screenBounds.width || y > this.screenBounds.height) {
-      throw new RangeError(`Coordinates (${x}, ${y}) are out of screen bounds (${this.screenBounds.width}x${this.screenBounds.height})`);
-    }
-  }
-
-  validateInterval(interval) {
-    if (typeof interval !== 'number' || Number.isNaN(interval)) {
-      throw new TypeError('Click interval must be a valid number');
-    }
-    if (interval < 10) {
-      throw new RangeError('Click interval must be at least 10ms to prevent system lockup');
-    }
-  }
-
-  safeExecuteClick(clickFn, target) {
+  for (let i = 0; i <= retries; i++) {
     try {
-      if (typeof clickFn !== 'function') {
-        throw new TypeError('Executor parameter must be a valid function');
-      }
-      if (!target || typeof target !== 'object') {
-        throw new Error('Target position object is required');
-      }
-
-      this.validateCoordinates(target.x, target.y);
-      if (target.interval !== undefined) {
-        this.validateInterval(target.interval);
-      }
-
-      const result = clickFn(target.x, target.y);
-      return { success: true, result };
+      return await fn();
     } catch (err) {
-      return {
-        success: false,
-        error: err.message,
-        type: err.name,
-        timestamp: Date.now()
-      };
+      lastError = err;
+      if (i === retries) break;
+
+      // Exponential backoff calculation
+      const backoff = delay * Math.pow(2, i);
+      await new Promise(resolve => setTimeout(resolve, backoff));
     }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Handles auto-clicker network requests with fault tolerance.
+ */
+async function handleNetworkRequest(requestTask) {
+  try {
+    return await withRetry(async () => {
+      const response = await requestTask();
+      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+      return response;
+    });
+  } catch (error) {
+    console.error('Request failed after max retries:', error.message);
+    throw error;
   }
 }
 
-module.exports = ClickHandler;
+module.exports = { withRetry, handleNetworkRequest };
