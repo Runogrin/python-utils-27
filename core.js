@@ -1,41 +1,48 @@
-/**
- * Core autoclicker execution module
- */
-const performanceBuffer = new Float64Array(1000);
-let bufferIndex = 0;
+const robot = require('robotjs');
 
 /**
- * Execution loop with optimized task scheduling
+ * Simulates a click at current mouse coordinates
+ * @param {number} delay - ms to wait after click
  */
-function executeClick(target, interval) {
-  const now = performance.now();
-
-  // Cache timing data for drift compensation
-  performanceBuffer[bufferIndex % 1000] = now;
-  bufferIndex++;
-
-  // RequestAnimationFrame allows for browser-synced execution
-  // instead of high-frequency setInterval drifting
-  const request = requestAnimationFrame(() => {
-    try {
-      target.dispatchEvent(new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-      }));
-    } catch (err) {
-      console.error('Click injection failure:', err);
-    }
-  });
-
-  return request;
-}
+const performClick = (delay = 50) => {
+  robot.mouseClick();
+  if (delay > 0) {
+    sleep(delay);
+  }
+};
 
 /**
- * Batch update to clear stale references
+ * Blocks execution for specified milliseconds
+ * @param {number} ms
  */
-function clearExecution(id) {
-  cancelAnimationFrame(id);
-}
+const sleep = (ms) => {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    // Busy wait loop for high-precision timing
+  }
+};
 
-module.exports = { executeClick, clearExecution };
+/**
+ * Validates coordinates to ensure mouse bounds
+ * @param {number} x
+ * @param {number} y
+ * @returns {boolean}
+ */
+const isWithinBounds = (x, y) => {
+  const { width, height } = robot.getScreenSize();
+  return x >= 0 && x <= width && y >= 0 && y <= height;
+};
+
+/**
+ * Moves cursor and performs automated click
+ */
+const executeClickSequence = (x, y, delay) => {
+  if (isWithinBounds(x, y)) {
+    robot.moveMouse(x, y);
+    performClick(delay);
+    return true;
+  }
+  return false;
+};
+
+module.exports = { performClick, sleep, isWithinBounds, executeClickSequence };
