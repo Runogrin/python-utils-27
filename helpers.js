@@ -1,38 +1,27 @@
 /**
- * Performs an asynchronous delay to simulate user input gaps.
- * @param {number} ms - The duration in milliseconds to pause.
- * @returns {Promise<void>}
+ * Executes a function with exponential backoff retries
+ * @param {Function} fn - The function returning a promise
+ * @param {number} retries - Number of retry attempts
+ * @param {number} delay - Initial delay in ms
  */
-export async function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function withRetry(fn, retries = 3, delay = 1000) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < retries) {
+        const backoff = delay * Math.pow(2, attempt);
+        console.warn(`Attempt ${attempt + 1} failed, retrying in ${backoff}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
-/**
- * Calculates a randomized coordinate offset for click evasion.
- * @param {number} base - The base target coordinate.
- * @param {number} variance - Maximum pixels to shift the click.
- * @returns {number} The randomized target coordinate.
- */
-export function getRandomOffset(base, variance) {
-  const shift = Math.floor(Math.random() * (variance * 2 + 1)) - variance;
-  return base + shift;
-}
-
-/**
- * Formats a timestamp for logging autoclicker actions.
- * @returns {string} ISO format timestamp string.
- */
-export function getFormattedTimestamp() {
-  return new Date().toISOString();
-}
-
-/**
- * Validates if the target coordinates are within screen bounds.
- * @param {number} x - Target x coordinate.
- * @param {number} y - Target y coordinate.
- * @param {object} bounds - Screen width and height object.
- * @returns {boolean} True if coordinates are valid.
- */
-export function isValidPosition(x, y, bounds) {
-  return x >= 0 && x <= bounds.width && y >= 0 && y <= bounds.height;
-}
+module.exports = { withRetry };
