@@ -1,42 +1,49 @@
 /**
- * Executes a network operation with exponential backoff.
- * @param {Function} fn - Async function to execute.
- * @param {number} retries - Max retry attempts.
- * @param {number} delay - Initial delay in milliseconds.
+ * Main processing loop for python-utils-27 autoclicker.
+ * Handles input validation and click execution.
  */
-async function withRetry(fn, retries = 3, delay = 1000) {
-  let lastError;
 
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      if (i === retries) break;
+const MAX_CLICK_DELAY = 10000;
+const MIN_CLICK_DELAY = 50;
 
-      // Exponential backoff calculation
-      const backoff = delay * Math.pow(2, i);
-      await new Promise(resolve => setTimeout(resolve, backoff));
-    }
+function validateInput(settings) {
+  if (!settings || typeof settings !== 'object') {
+    throw new Error('Invalid configuration object');
   }
 
-  throw lastError;
+  if (typeof settings.interval !== 'number' || 
+      settings.interval < MIN_CLICK_DELAY || 
+      settings.interval > MAX_CLICK_DELAY) {
+    throw new Error(`Interval must be between ${MIN_CLICK_DELAY} and ${MAX_CLICK_DELAY}ms`);
+  }
+
+  if (!Number.isInteger(settings.x) || !Number.isInteger(settings.y)) {
+    throw new Error('Coordinates must be integers');
+  }
+
+  return true;
 }
 
-/**
- * Handles auto-clicker network requests with fault tolerance.
- */
-async function handleNetworkRequest(requestTask) {
+async function runAutoclicker(config) {
   try {
-    return await withRetry(async () => {
-      const response = await requestTask();
-      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-      return response;
-    });
-  } catch (error) {
-    console.error('Request failed after max retries:', error.message);
-    throw error;
+    validateInput(config);
+
+    console.log(`Starting loop at (${config.x}, ${config.y})`);
+
+    while (config.active) {
+      // Simulate mouse click operation
+      performClick(config.x, config.y);
+
+      await new Promise(resolve => setTimeout(resolve, config.interval));
+    }
+  } catch (err) {
+    console.error('Processing loop terminated:', err.message);
   }
 }
 
-module.exports = { withRetry, handleNetworkRequest };
+function performClick(x, y) {
+  // Implementation for python-utils-27 bridge
+  process.stdout.write(`Click triggered at ${x}, ${y}\n`);
+}
+
+module.exports = { runAutoclicker };
