@@ -1,27 +1,38 @@
 /**
- * Executes a function with exponential backoff retries
- * @param {Function} fn - The function returning a promise
- * @param {number} retries - Number of retry attempts
- * @param {number} delay - Initial delay in ms
+ * Mouse event simulation and timing helpers
+ * for python-utils-27 automation tasks
  */
-async function withRetry(fn, retries = 3, delay = 1000) {
-  let lastError;
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
+const getRandomInt = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 
-      if (attempt < retries) {
-        const backoff = delay * Math.pow(2, attempt);
-        console.warn(`Attempt ${attempt + 1} failed, retrying in ${backoff}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, backoff));
-      }
-    }
-  }
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
-  throw lastError;
-}
+const clickAt = (robot, x, y) => {
+  robot.moveMouse(x, y);
+  robot.mouseClick();
+};
 
-module.exports = { withRetry };
+const clickWithVariance = async (robot, x, y, variance = 5) => {
+  const targetX = x + getRandomInt(-variance, variance);
+  const targetY = y + getRandomInt(-variance, variance);
+  
+  robot.moveMouseSmooth(targetX, targetY);
+  await sleep(getRandomInt(50, 150));
+  robot.mouseClick();
+};
+
+const isRunningInsideScreen = (x, y, screenSize) => {
+  return x >= 0 && x <= screenSize.width && y >= 0 && y <= screenSize.height;
+};
+
+module.exports = {
+  getRandomInt,
+  sleep,
+  clickAt,
+  clickWithVariance,
+  isRunningInsideScreen
+};
