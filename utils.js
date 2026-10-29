@@ -1,47 +1,40 @@
-const robot = require('robotjs');
-
 /**
- * Autoclicker core utility operations
+ * Validates and sanitizes autoclicker timing configuration
+ * @param {Object} data - Raw timing configuration input
+ * @returns {Object|null} Sanitized configuration or null if invalid
  */
-const AutoclickerUtils = {
-  /**
-   * Perform a click at the specified screen coordinates
-   * @param {number} x 
-   * @param {number} y 
-   */
-  performClick(x, y) {
-    robot.moveMouse(x, y);
-    robot.mouseClick('left');
-  },
+const validateClickConfig = (data) => {
+  const MIN_DELAY = 10;
+  const MAX_DELAY = 60000;
 
-  /**
-   * Validation for coordinate boundaries
-   * @param {number} x 
-   * @param {number} y 
-   * @returns {boolean}
-   */
-  isValidCoordinate(x, y) {
-    const { width, height } = robot.getScreenSize();
-    return x >= 0 && x <= width && y >= 0 && y <= height;
-  },
+  if (!data || typeof data !== 'object') return null;
 
-  /**
-   * Sleep utility for interval control
-   * @param {number} ms 
-   */
-  async sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  },
+  const interval = parseInt(data.interval, 10);
+  const jitter = parseInt(data.jitter, 10) || 0;
 
-  /**
-   * Format click logging metadata
-   * @param {number} x 
-   * @param {number} y 
-   * @returns {string}
-   */
-  getLogTimestamp(x, y) {
-    return `[${new Date().toISOString()}] Clicked at (${x}, ${y})`;
+  if (isNaN(interval) || interval < MIN_DELAY || interval > MAX_DELAY) {
+    return null;
   }
+
+  return {
+    interval: interval,
+    jitter: Math.max(0, jitter),
+    timestamp: Date.now()
+  };
 };
 
-module.exports = AutoclickerUtils;
+/**
+ * Calculates dynamic delay with optional jitter
+ * @param {number} base - Base interval in ms
+ * @param {number} jitter - Randomization range in ms
+ * @returns {number} Final timeout value
+ */
+const getDynamicInterval = (base, jitter) => {
+  const offset = Math.floor(Math.random() * jitter);
+  return base + offset;
+};
+
+module.exports = {
+  validateClickConfig,
+  getDynamicInterval
+};
