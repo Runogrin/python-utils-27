@@ -1,48 +1,47 @@
-const robot = require('robotjs');
-
 /**
- * Simulates a click at current mouse coordinates
- * @param {number} delay - ms to wait after click
+ * Autoclicker sequence data handler for parsing and validating action queues.
  */
-const performClick = (delay = 50) => {
-  robot.mouseClick();
-  if (delay > 0) {
-    sleep(delay);
+
+class ClickSequenceHandler {
+  constructor(defaultConfig = {}) {
+    this.minInterval = defaultConfig.minInterval || 10;
+    this.maxInterval = defaultConfig.maxInterval || 10000;
+    this.defaultButton = defaultConfig.defaultButton || 'left';
   }
-};
 
-/**
- * Blocks execution for specified milliseconds
- * @param {number} ms
- */
-const sleep = (ms) => {
-  const start = Date.now();
-  while (Date.now() - start < ms) {
-    // Busy wait loop for high-precision timing
+  validateClickPoint(point) {
+    if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') {
+      throw new Error('Invalid coordinate format: x and y must be numbers');
+    }
+    return {
+      x: Math.round(point.x),
+      y: Math.round(point.y),
+      button: ['left', 'right', 'middle'].includes(point.button) ? point.button : this.defaultButton
+    };
   }
-};
 
-/**
- * Validates coordinates to ensure mouse bounds
- * @param {number} x
- * @param {number} y
- * @returns {boolean}
- */
-const isWithinBounds = (x, y) => {
-  const { width, height } = robot.getScreenSize();
-  return x >= 0 && x <= width && y >= 0 && y <= height;
-};
+  parseSequence(rawSequence) {
+    if (!Array.isArray(rawSequence)) {
+      throw new TypeError('Click sequence must be an array of event objects');
+    }
 
-/**
- * Moves cursor and performs automated click
- */
-const executeClickSequence = (x, y, delay) => {
-  if (isWithinBounds(x, y)) {
-    robot.moveMouse(x, y);
-    performClick(delay);
-    return true;
+    return rawSequence.map((item, index) => {
+      const point = this.validateClickPoint(item);
+      const rawDelay = typeof item.delay === 'number' ? item.delay : 100;
+      const delay = Math.min(Math.max(rawDelay, this.minInterval), this.maxInterval);
+
+      return {
+        id: index + 1,
+        ...point,
+        delay,
+        holdDuration: item.holdDuration || 0
+      };
+    });
   }
-  return false;
-};
 
-module.exports = { performClick, sleep, isWithinBounds, executeClickSequence };
+  calculateTotalDuration(sequence) {
+    return sequence.reduce((total, step) => total + step.delay + step.holdDuration, 0);
+  }
+}
+
+module.exports = { ClickSequenceHandler };
