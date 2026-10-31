@@ -1,48 +1,46 @@
 /**
- * Configuration and input validation for autoclicker loop
+ * Configuration manager for python-utils-27
+ * Handles validation and safe defaults for autoclicker settings
  */
 
-const validateSettings = (settings) => {
-  const errors = [];
-
-  if (typeof settings.interval !== 'number' || settings.interval < 50) {
-    errors.push('Interval must be a number >= 50ms');
-  }
-
-  if (typeof settings.button !== 'string' || !['left', 'right'].includes(settings.button)) {
-    errors.push('Button must be either left or right');
-  }
-
-  if (!Number.isInteger(settings.iterations) || settings.iterations < 0) {
-    errors.push('Iterations must be a non-negative integer');
-  }
-
-  return { valid: errors.length === 0, errors };
+const DEFAULT_CONFIG = {
+  interval: 100,
+  maxClicks: 1000,
+  retryLimit: 3
 };
 
-const runProcessingLoop = (settings) => {
-  const validation = validateSettings(settings);
-  
-  if (!validation.valid) {
-    console.error('Validation failed:', validation.errors.join(', '));
-    return false;
-  }
-
-  console.log('Starting autoclicker with settings:', settings);
-  
-  let count = 0;
-  const intervalId = setInterval(() => {
-    if (settings.iterations > 0 && count >= settings.iterations) {
-      clearInterval(intervalId);
-      return;
+/**
+ * Validates and sanitizes user-provided settings
+ * @param {Object} userConfig 
+ * @returns {Object} validated configuration
+ */
+function validateConfig(userConfig) {
+  try {
+    if (!userConfig || typeof userConfig !== 'object') {
+      throw new Error('Invalid config object provided');
     }
-    
-    // Simulate core click functionality
-    console.log(`Click action executed: ${count + 1}`);
-    count++;
-  }, settings.interval);
 
-  return true;
+    const config = { ...DEFAULT_CONFIG, ...userConfig };
+
+    // Edge case: Ensure interval is positive and within hardware limits
+    if (typeof config.interval !== 'number' || config.interval < 10) {
+      console.warn('Interval below safe threshold, resetting to 100ms');
+      config.interval = 100;
+    }
+
+    // Edge case: Prevent negative click counts
+    if (config.maxClicks < 0) {
+      config.maxClicks = 0;
+    }
+
+    return config;
+  } catch (error) {
+    console.error('Config validation failed:', error.message);
+    return DEFAULT_CONFIG;
+  }
+}
+
+module.exports = {
+  validateConfig,
+  DEFAULT_CONFIG
 };
-
-module.exports = { validateSettings, runProcessingLoop };
