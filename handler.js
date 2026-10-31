@@ -1,49 +1,42 @@
 /**
- * Main processing loop for python-utils-27 autoclicker.
- * Handles input validation and click execution.
+ * Handles validation and normalization of autoclicker configuration data.
  */
 
-const MAX_CLICK_DELAY = 10000;
-const MIN_CLICK_DELAY = 50;
+const validateClickData = (data) => {
+  const defaults = {
+    interval: 100, // milliseconds
+    x: 0,
+    y: 0,
+    enabled: false
+  };
 
-function validateInput(settings) {
-  if (!settings || typeof settings !== 'object') {
-    throw new Error('Invalid configuration object');
+  if (!data || typeof data !== 'object') {
+    return defaults;
   }
 
-  if (typeof settings.interval !== 'number' || 
-      settings.interval < MIN_CLICK_DELAY || 
-      settings.interval > MAX_CLICK_DELAY) {
-    throw new Error(`Interval must be between ${MIN_CLICK_DELAY} and ${MAX_CLICK_DELAY}ms`);
-  }
+  return {
+    interval: Math.max(10, parseInt(data.interval) || defaults.interval),
+    x: parseInt(data.x) || defaults.x,
+    y: parseInt(data.y) || defaults.y,
+    enabled: !!data.enabled
+  };
+};
 
-  if (!Number.isInteger(settings.x) || !Number.isInteger(settings.y)) {
-    throw new Error('Coordinates must be integers');
-  }
+/**
+ * Formats click coordinates for processing engines.
+ */
+const formatClickPayload = (clickData) => {
+  const validated = validateClickData(clickData);
+  
+  return JSON.stringify({
+    ts: Date.now(),
+    coordinates: { x: validated.x, y: validated.y },
+    delay: validated.interval,
+    active: validated.enabled
+  });
+};
 
-  return true;
-}
-
-async function runAutoclicker(config) {
-  try {
-    validateInput(config);
-
-    console.log(`Starting loop at (${config.x}, ${config.y})`);
-
-    while (config.active) {
-      // Simulate mouse click operation
-      performClick(config.x, config.y);
-
-      await new Promise(resolve => setTimeout(resolve, config.interval));
-    }
-  } catch (err) {
-    console.error('Processing loop terminated:', err.message);
-  }
-}
-
-function performClick(x, y) {
-  // Implementation for python-utils-27 bridge
-  process.stdout.write(`Click triggered at ${x}, ${y}\n`);
-}
-
-module.exports = { runAutoclicker };
+module.exports = {
+  validateClickData,
+  formatClickPayload
+};
