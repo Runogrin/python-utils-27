@@ -1,46 +1,33 @@
 /**
- * Configuration manager for python-utils-27
- * Handles validation and safe defaults for autoclicker settings
+ * @typedef {Object} ClickConfig
+ * @property {number} interval - Delay in milliseconds between clicks
+ * @property {number} duration - Maximum running time in milliseconds
+ * @property {boolean} randomized - Whether to jitter the click timing
  */
 
-const DEFAULT_CONFIG = {
+/**
+ * Default autoclicker configuration parameters
+ * @type {ClickConfig}
+ */
+const defaultConfig = {
   interval: 100,
-  maxClicks: 1000,
-  retryLimit: 3
+  duration: 60000,
+  randomized: true
 };
 
 /**
- * Validates and sanitizes user-provided settings
- * @param {Object} userConfig 
- * @returns {Object} validated configuration
+ * Merges user overrides with default settings
+ * @param {Partial<ClickConfig>} overrides - User provided settings
+ * @returns {ClickConfig} - The finalized configuration object
  */
-function validateConfig(userConfig) {
-  try {
-    if (!userConfig || typeof userConfig !== 'object') {
-      throw new Error('Invalid config object provided');
-    }
-
-    const config = { ...DEFAULT_CONFIG, ...userConfig };
-
-    // Edge case: Ensure interval is positive and within hardware limits
-    if (typeof config.interval !== 'number' || config.interval < 10) {
-      console.warn('Interval below safe threshold, resetting to 100ms');
-      config.interval = 100;
-    }
-
-    // Edge case: Prevent negative click counts
-    if (config.maxClicks < 0) {
-      config.maxClicks = 0;
-    }
-
-    return config;
-  } catch (error) {
-    console.error('Config validation failed:', error.message);
-    return DEFAULT_CONFIG;
-  }
+function getConfiguration(overrides = {}) {
+  return {
+    ...defaultConfig,
+    ...overrides
+  };
 }
 
 module.exports = {
-  validateConfig,
-  DEFAULT_CONFIG
+  defaultConfig,
+  getConfiguration
 };
