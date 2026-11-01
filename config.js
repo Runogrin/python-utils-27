@@ -1,33 +1,45 @@
-/**
- * @typedef {Object} ClickConfig
- * @property {number} interval - Delay in milliseconds between clicks
- * @property {number} duration - Maximum running time in milliseconds
- * @property {boolean} randomized - Whether to jitter the click timing
- */
+const fs = require('fs');
+const path = require('path');
 
-/**
- * Default autoclicker configuration parameters
- * @type {ClickConfig}
- */
-const defaultConfig = {
+const DEFAULT_CONFIG = {
   interval: 100,
-  duration: 60000,
-  randomized: true
+  clicks: 1000,
+  button: 'left',
+  randomize: false
 };
 
 /**
- * Merges user overrides with default settings
- * @param {Partial<ClickConfig>} overrides - User provided settings
- * @returns {ClickConfig} - The finalized configuration object
+ * Loads configuration from a JSON file, merging with defaults.
+ * @param {string} configPath 
+ * @returns {Object}
  */
-function getConfiguration(overrides = {}) {
-  return {
-    ...defaultConfig,
-    ...overrides
-  };
+function loadConfig(configPath) {
+  try {
+    if (!fs.existsSync(configPath)) {
+      return { ...DEFAULT_CONFIG };
+    }
+
+    const rawData = fs.readFileSync(configPath, 'utf8');
+    const userConfig = JSON.parse(rawData);
+    
+    return { ...DEFAULT_CONFIG, ...userConfig };
+  } catch (err) {
+    console.error('Failed to load config, using defaults:', err.message);
+    return { ...DEFAULT_CONFIG };
+  }
 }
 
-module.exports = {
-  defaultConfig,
-  getConfiguration
-};
+/**
+ * Persists current configuration to disk.
+ * @param {string} configPath 
+ * @param {Object} config 
+ */
+function saveConfig(configPath, config) {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  } catch (err) {
+    console.error('Failed to save config:', err.message);
+  }
+}
+
+module.exports = { loadConfig, saveConfig };
