@@ -1,47 +1,60 @@
-/**
- * Autoclicker sequence data handler for parsing and validating action queues.
- */
+const { performance } = require('perf_hooks');
 
-class ClickSequenceHandler {
-  constructor(defaultConfig = {}) {
-    this.minInterval = defaultConfig.minInterval || 10;
-    this.maxInterval = defaultConfig.maxInterval || 10000;
-    this.defaultButton = defaultConfig.defaultButton || 'left';
+class ClickEngine {
+  constructor(options = {}) {
+    this.interval = options.interval || 100;
+    this.active = false;
+    this.clickCount = 0;
+    this.timerId = null;
+    this.lastClickTime = 0;
+    this.targetHandler = options.handler || (() => {});
   }
 
-  validateClickPoint(point) {
-    if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') {
-      throw new Error('Invalid coordinate format: x and y must be numbers');
+  // Pre-calculate timing drift to maintain stable click frequency
+  start() {
+    if (this.active) return;
+    this.active = true;
+    this.lastClickTime = performance.now();
+    this.scheduleNextClick();
+  }
+
+  stop() {
+    this.active = false;
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
     }
+  }
+
+  scheduleNextClick() {
+    if (!this.active) return;
+
+    const now = performance.now();
+    const elapsed = now - this.lastClickTime;
+    const nextDelay = Math.max(0, this.interval - (elapsed - this.interval));
+
+    this.timerId = setTimeout(() => {
+      this.executeClick();
+    }, nextDelay);
+  }
+
+  executeClick() {
+    if (!this.active) return;
+    
+    this.lastClickTime = performance.now();
+    this.targetHandler();
+    this.clickCount++;
+
+    this.scheduleNextClick();
+  }
+
+  getStats() {
     return {
-      x: Math.round(point.x),
-      y: Math.round(point.y),
-      button: ['left', 'right', 'middle'].includes(point.button) ? point.button : this.defaultButton
+      active: this.active,
+      clickCount: this.clickCount,
+      interval: this.interval
     };
-  }
-
-  parseSequence(rawSequence) {
-    if (!Array.isArray(rawSequence)) {
-      throw new TypeError('Click sequence must be an array of event objects');
-    }
-
-    return rawSequence.map((item, index) => {
-      const point = this.validateClickPoint(item);
-      const rawDelay = typeof item.delay === 'number' ? item.delay : 100;
-      const delay = Math.min(Math.max(rawDelay, this.minInterval), this.maxInterval);
-
-      return {
-        id: index + 1,
-        ...point,
-        delay,
-        holdDuration: item.holdDuration || 0
-      };
-    });
-  }
-
-  calculateTotalDuration(sequence) {
-    return sequence.reduce((total, step) => total + step.delay + step.holdDuration, 0);
   }
 }
 
-module.exports = { ClickSequenceHandler };
+module.exports = ClickEngine;
