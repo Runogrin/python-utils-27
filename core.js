@@ -1,60 +1,45 @@
-const { performance } = require('perf_hooks');
+const robot = require('robotjs');
 
-class ClickEngine {
-  constructor(options = {}) {
-    this.interval = options.interval || 100;
-    this.active = false;
-    this.clickCount = 0;
-    this.timerId = null;
-    this.lastClickTime = 0;
-    this.targetHandler = options.handler || (() => {});
-  }
+/**
+ * Performs an automated click with boundary validation
+ * @param {number} x - Target x coordinate
+ * @param {number} y - Target y coordinate
+ */
+function performClick(x, y) {
+    try {
+        const { width, height } = robot.getScreenSize();
 
-  // Pre-calculate timing drift to maintain stable click frequency
-  start() {
-    if (this.active) return;
-    this.active = true;
-    this.lastClickTime = performance.now();
-    this.scheduleNextClick();
-  }
+        // Validation of screen boundaries
+        if (typeof x !== 'number' || typeof y !== 'number') {
+            throw new TypeError('Coordinates must be numeric values');
+        }
 
-  stop() {
-    this.active = false;
-    if (this.timerId) {
-      clearTimeout(this.timerId);
-      this.timerId = null;
+        if (x < 0 || x > width || y < 0 || y > height) {
+            throw new RangeError(`Coordinates ${x},${y} are out of bounds (${width}x${height})`);
+        }
+
+        robot.moveMouse(x, y);
+        robot.mouseClick();
+    } catch (err) {
+        console.error(`Click failed: ${err.message}`);
+        // Fail silently or handle per policy
     }
-  }
-
-  scheduleNextClick() {
-    if (!this.active) return;
-
-    const now = performance.now();
-    const elapsed = now - this.lastClickTime;
-    const nextDelay = Math.max(0, this.interval - (elapsed - this.interval));
-
-    this.timerId = setTimeout(() => {
-      this.executeClick();
-    }, nextDelay);
-  }
-
-  executeClick() {
-    if (!this.active) return;
-    
-    this.lastClickTime = performance.now();
-    this.targetHandler();
-    this.clickCount++;
-
-    this.scheduleNextClick();
-  }
-
-  getStats() {
-    return {
-      active: this.active,
-      clickCount: this.clickCount,
-      interval: this.interval
-    };
-  }
 }
 
-module.exports = ClickEngine;
+/**
+ * Executes a series of clicks with recovery logic
+ * @param {Array} points - Array of {x, y} objects
+ */
+function executeSequence(points) {
+    if (!Array.isArray(points)) return;
+
+    points.forEach((point, index) => {
+        try {
+            performClick(point.x, point.y);
+        } catch (err) {
+            console.error(`Sequence halted at index ${index}: ${err.message}`);
+        }
+    });
+}
+
+module.exports = { performClick, executeSequence };
