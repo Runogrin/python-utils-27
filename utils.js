@@ -1,74 +1,35 @@
 /**
- * Safety and validation utilities for autoclicker operations.
+ * Helper functions for python-utils-27 autoclicker operations
  */
 
-class AutoClickerError extends Error {
-  constructor(message, code) {
-    super(message);
-    this.name = 'AutoClickerError';
-    this.code = code;
-  }
-}
+// Generate a random integer within a range
+const getRandomInt = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 
-/**
- * Validates click coordinates against target screen bounds.
- */
-function validateCoordinates(x, y, bounds = { width: 1920, height: 1080 }) {
-  if (typeof x !== 'number' || typeof y !== 'number' || Number.isNaN(x) || Number.isNaN(y)) {
-    throw new AutoClickerError('Coordinates must be valid finite numbers', 'ERR_INVALID_COORDS');
-  }
+// Execute a function with a randomized delay to simulate human jitter
+const sleepWithJitter = (baseDelay, jitter = 50) => {
+  const delay = baseDelay + getRandomInt(-jitter, jitter);
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, delay)));
+};
 
-  if (x < 0 || y < 0 || x > bounds.width || y > bounds.height) {
-    throw new AutoClickerError(
-      `Coordinates (${x}, ${y}) out of screen bounds [${bounds.width}x${bounds.height}]`,
-      'ERR_OUT_OF_BOUNDS'
-    );
-  }
+// Format coordinates into a standardized position object
+const createPosition = (x, y) => ({ x: Math.round(x), y: Math.round(y) });
 
-  return true;
-}
+// Validate coordinate boundaries against screen dimensions
+const isWithinBounds = (pos, width, height) => {
+  return pos.x >= 0 && pos.x <= width && pos.y >= 0 && pos.y <= height;
+};
 
-/**
- * Safely executes a click callback with bounds and rate-limit error handling.
- */
-function safeExecuteClick(clickFn, config = {}) {
-  const { x, y, minIntervalMs = 10, intervalMs = 100 } = config;
-
-  try {
-    if (typeof clickFn !== 'function') {
-      throw new AutoClickerError('Target action must be a callable function', 'ERR_INVALID_CALLBACK');
-    }
-
-    if (intervalMs < minIntervalMs) {
-      throw new AutoClickerError(
-        `Click interval ${intervalMs}ms violates safety floor of ${minIntervalMs}ms`,
-        'ERR_INTERVAL_TOO_LOW'
-      );
-    }
-
-    if (x !== undefined && y !== undefined) {
-      validateCoordinates(x, y, config.bounds);
-    }
-
-    return { success: true, result: clickFn(x, y) };
-  } catch (err) {
-    const errorDetails = err instanceof AutoClickerError 
-      ? err 
-      : new AutoClickerError(err.message, 'ERR_UNKNOWN');
-    
-    return {
-      success: false,
-      error: {
-        message: errorDetails.message,
-        code: errorDetails.code,
-        timestamp: Date.now()
-      }
-    };
-  }
-}
+// Format timestamps for logger integration
+const getTimestamp = () => {
+  return new Date().toISOString().replace('T', ' ').substring(0, 19);
+};
 
 module.exports = {
-  AutoClickerError,
-  validateCoordinates,
-  safeExecuteClick
+  getRandomInt,
+  sleepWithJitter,
+  createPosition,
+  isWithinBounds,
+  getTimestamp
 };
