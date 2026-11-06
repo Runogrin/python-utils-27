@@ -1,38 +1,39 @@
 /**
- * Mouse event simulation and timing helpers
- * for python-utils-27 automation tasks
+ * Executes a function with exponential backoff for network resilience
+ * @param {Function} fn - The asynchronous function to retry
+ * @param {number} retries - Maximum number of attempts
+ * @param {number} delay - Initial delay in milliseconds
  */
+async function withRetry(fn, retries = 3, delay = 1000) {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) {
+      throw error;
+    }
 
-const getRandomInt = (min, max) => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+    console.warn(`Operation failed, retrying in ${delay}ms... Attempts left: ${retries}`);
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    return withRetry(fn, retries - 1, delay * 2);
+  }
+}
 
-const sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
-
-const clickAt = (robot, x, y) => {
-  robot.moveMouse(x, y);
-  robot.mouseClick();
-};
-
-const clickWithVariance = async (robot, x, y, variance = 5) => {
-  const targetX = x + getRandomInt(-variance, variance);
-  const targetY = y + getRandomInt(-variance, variance);
-  
-  robot.moveMouseSmooth(targetX, targetY);
-  await sleep(getRandomInt(50, 150));
-  robot.mouseClick();
-};
-
-const isRunningInsideScreen = (x, y, screenSize) => {
-  return x >= 0 && x <= screenSize.width && y >= 0 && y <= screenSize.height;
-};
+/**
+ * Wrapper for fetch requests with automatic retry logic
+ */
+async function fetchWithRetry(url, options = {}, retries = 3) {
+  return withRetry(async () => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+    return response;
+  }, retries);
+}
 
 module.exports = {
-  getRandomInt,
-  sleep,
-  clickAt,
-  clickWithVariance,
-  isRunningInsideScreen
+  withRetry,
+  fetchWithRetry
 };
