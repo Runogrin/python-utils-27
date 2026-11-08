@@ -1,17 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * default configuration for autoclicker
+ */
 const DEFAULT_CONFIG = {
   interval: 100,
+  clicksPerBurst: 1,
   button: 'left',
-  repeat: 0,
-  randomize: false
+  randomizeDelay: true
 };
 
 /**
- * Loads configuration from a local JSON file with fallback defaults
- * @param {string} configPath 
- * @returns {Object}
+ * loads json config from file system
+ * merges with defaults if file missing
  */
 function loadConfig(configPath) {
   try {
@@ -22,9 +24,12 @@ function loadConfig(configPath) {
     const rawData = fs.readFileSync(configPath, 'utf8');
     const userConfig = JSON.parse(rawData);
 
-    return { ...DEFAULT_CONFIG, ...userConfig };
-  } catch (err) {
-    console.error('Config load failed, using defaults:', err.message);
+    return {
+      ...DEFAULT_CONFIG,
+      ...userConfig
+    };
+  } catch (error) {
+    console.error('failed to parse config, using defaults:', error.message);
     return { ...DEFAULT_CONFIG };
   }
 }
