@@ -1,43 +1,45 @@
 /**
- * Represents a click coordinate on the screen
- * @typedef {Object} ClickPoint
- * @property {number} x
- * @property {number} y
+ * Manages autoclicker coordinate data and click intervals.
  */
+class ClickManager {
+  constructor() {
+    this.registry = new Map();
+  }
 
-/**
- * Configuration for the autoclicker interval
- * @typedef {Object} ClickConfig
- * @property {number} delay
- * @property {boolean} active
- */
+  /**
+   * Adds a new click target with coordinate mapping.
+   */
+  registerTarget(id, x, y, interval) {
+    if (interval < 50) throw new Error('Interval too low');
+    this.registry.set(id, { x, y, interval, active: true });
+  }
 
-/**
- * Performs an automated click at the specified position
- * @param {ClickPoint} point
- * @param {ClickConfig} config
- * @returns {void}
- */
-function performClick(point, config) {
-  if (!config.active) return;
+  /**
+   * Serializes current state for local storage persistence.
+   */
+  exportConfiguration() {
+    return JSON.stringify(Object.fromEntries(this.registry));
+  }
 
-  try {
-    // Simulates low-level system mouse input
-    console.log(`Clicking at ${point.x}, ${point.y}`);
-  } catch (error) {
-    console.error('Click execution failed', error);
+  /**
+   * Clears all registered click targets.
+   */
+  reset() {
+    this.registry.clear();
+  }
+
+  /**
+   * Validates coordinate bounds for simulated clicks.
+   */
+  validateBounds(width, height) {
+    for (const [id, data] of this.registry) {
+      if (data.x > width || data.y > height) {
+        console.warn(`Target ${id} is out of display bounds`);
+        return false;
+      }
+    }
+    return true;
   }
 }
 
-/**
- * Initializes the click sequence loop
- * @param {ClickPoint} point
- * @param {number} interval
- * @returns {NodeJS.Timeout}
- */
-function startAutomation(point, interval) {
-  const config = { delay: interval, active: true };
-  return setInterval(() => performClick(point, config), interval);
-}
-
-module.exports = { performClick, startAutomation };
+module.exports = new ClickManager();
