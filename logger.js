@@ -1,81 +1,80 @@
 /**
- * Log levels available for the autoclicker module.
- * @typedef {'debug' | 'info' | 'warn' | 'error'} LogLevel
+ * @fileoverview Logger module for tracking autoclicker activity and performance.
  */
 
 /**
- * Options for configuring the AutoclickLogger instance.
- * @typedef {Object} LoggerOptions
- * @property {LogLevel} [minLevel='info'] - Minimum level of logs to output.
- * @property {boolean} [includeTimestamp=true] - Whether to include timestamp in outputs.
- * @property {string} [prefix='[AutoClicker]'] - Prefix tag for all log outputs.
+ * @typedef {'INFO' | 'WARN' | 'ERROR' | 'DEBUG'} LogLevel
  */
 
-class AutoclickLogger {
+/**
+ * @typedef {Object} LogEntry
+ * @property {string} timestamp - ISO format timestamp of log event.
+ * @property {LogLevel} level - Severity level of the log.
+ * @property {string} message - Core log message.
+ * @property {Record<string, unknown>} [metadata] - Additional contextual data.
+ */
+
+class Logger {
   /**
-   * Creates a logger instance for tracking autoclicker events and errors.
-   * @param {LoggerOptions} [options={}] - Configuration options for the logger.
+   * Initializes a new Logger instance.
+   * @param {LogLevel} [minLevel='INFO'] - Minimum log level threshold to output.
    */
-  constructor(options = {}) {
-    const { minLevel = 'info', includeTimestamp = true, prefix = '[AutoClicker]' } = options;
+  constructor(minLevel = 'INFO') {
+    /** @type {LogLevel} */
+    this.minLevel = minLevel;
+
+    /** @type {LogEntry[]} */
+    this.logs = [];
 
     /** @type {Record<LogLevel, number>} */
-    this.levels = { debug: 0, info: 1, warn: 2, error: 3 };
-    this.minLevel = minLevel;
-    this.includeTimestamp = includeTimestamp;
-    this.prefix = prefix;
+    this.levelWeights = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
   }
 
   /**
-   * Formats a log message with optional timestamp and configured prefix.
-   * @private
-   * @param {LogLevel} level - Severity level of the log message.
-   * @param {string} message - Primary log message content.
-   * @returns {string} Formatted log string.
+   * Emits a log entry if it meets the configured severity threshold.
+   * @param {LogLevel} level - Severity level of entry.
+   * @param {string} message - Primary event text.
+   * @param {Record<string, unknown>} [metadata={}] - Optional metadata object.
+   * @returns {LogEntry | null} Recorded entry or null if filtered.
    */
-  _format(level, message) {
-    const timeStr = this.includeTimestamp ? `[${new Date().toISOString()}] ` : '';
-    return `${timeStr}${this.prefix} [${level.toUpperCase()}]: ${message}`;
-  }
-
-  /**
-   * Determines if the specified level should be logged based on minLevel.
-   * @private
-   * @param {LogLevel} level - The target log level.
-   * @returns {boolean} True if log level meets or exceeds minLevel.
-   */
-  _shouldLog(level) {
-    return this.levels[level] >= this.levels[this.minLevel];
-  }
-
-  /**
-   * Logs a message at the specified log level.
-   * @param {LogLevel} level - Severity level.
-   * @param {string} message - Message text to record.
-   * @param {Record<string, any>} [meta] - Optional metadata object.
-   */
-  log(level, message, meta) {
-    if (!this._shouldLog(level)) return;
-
-    const formatted = this._format(level, message);
-    const logFn = level === 'debug' ? console.log : console[level] || console.log;
-
-    if (meta && Object.keys(meta).length > 0) {
-      logFn(formatted, meta);
-    } else {
-      logFn(formatted);
+  log(level, message, metadata = {}) {
+    if (this.levelWeights[level] < this.levelWeights[this.minLevel]) {
+      return null;
     }
+
+    /** @type {LogEntry} */
+    const entry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      metadata
+    };
+
+    this.logs.push(entry);
+    const metaStr = Object.keys(metadata).length ? JSON.stringify(metadata) : '';
+    console.log(`[${entry.timestamp}] [${level}] ${message} ${metaStr}`.trim());
+
+    return entry;
   }
 
   /**
-   * Logs click action execution details.
-   * @param {number} x - Target X coordinate.
-   * @param {number} y - Target Y coordinate.
-   * @param {number} intervalMs - Delay in milliseconds before click.
+   * Records an autoclick execution event.
+   * @param {number} x - Target screen X coordinate.
+   * @param {number} y - Target screen Y coordinate.
+   * @param {number} interval - Click interval in milliseconds.
+   * @returns {LogEntry | null} Recorded log entry.
    */
-  logClick(x, y, intervalMs) {
-    this.log('info', `Click executed at (${x}, ${y})`, { intervalMs });
+  logClick(x, y, interval) {
+    return this.log('DEBUG', 'Click executed', { x, y, interval });
+  }
+
+  /**
+   * Clears accumulated in-memory logs.
+   * @returns {void}
+   */
+  clear() {
+    this.logs = [];
   }
 }
 
-module.exports = { AutoclickLogger };
+module.exports = { Logger };
