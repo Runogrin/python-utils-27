@@ -1,53 +1,48 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 # python-utils-27
 
-`python-utils-27` is a high-performance, low-latency desktop autoclicker built in Node.js for precise cursor automation. Designed for testing environments, gaming, and repetitive UI workflows, it delivers hardware-level mouse event simulation with minimal CPU overhead.
+A high-performance, cross-platform autoclicker built with Node.js and RobotJS. This tool provides precise mouse automation for repetitive tasks, testing, and productivity workflows.
 
 ## Features
 
-- **Sub-Millisecond Precision:** Executes click loops at intervals down to 1ms with optional micro-jitter randomization to mimic organic human input.
-- **Global Hotkey Intercepts:** Uses system-level key listeners (`Ctrl+Shift+S` to start, `Ctrl+Shift+X` to terminate) that respond globally, even when running minimized.
-- **Multi-Button & Action Support:** Configurable targeting for left, right, and middle clicks with support for single, double, and sustained hold-and-drag actions.
-- **Coordinate Locking:** Lock execution to fixed screen coordinates or let the engine follow dynamic cursor movement in real time.
+*   **Configurable Interval Control:** Set millisecond-precise clicking speeds to match any application requirement.
+*   **Smart Toggle System:** Use global keyboard shortcuts to start or stop automation instantly without switching windows.
+*   **Multi-Button Support:** Select between left, right, or middle mouse button triggers with ease.
+*   **Memory-Efficient Architecture:** Lightweight event loop implementation ensures minimal CPU impact during extended runtime.
 
 ## Installation
 
-Ensure you have [Node.js](https://nodejs.org/) (v16 or higher) and native build tools installed.
+Ensure you have [Node.js](https://nodejs.org/) installed, then follow these steps:
 
-```bash
-git clone https://github.com/Developer/python-utils-27.git
-cd python-utils-27
-npm install
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Developer/python-utils-27.git
+   cd python-utils-27
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+*(Note: RobotJS requires build tools installed on your system to compile native modules. See [robotjs.io](http://robotjs.io/) for OS-specific instructions.)*
 
 ## Usage
 
-### Programmatic API
-
-```javascript
-const AutoClicker = require('./src/index');
-
-const clicker = new AutoClicker({
-  interval: 50,       // Time between clicks in ms
-  button: 'left',     // 'left', 'right', or 'middle'
-  jitter: 3,          // +/- 3ms random delay variation
-  maxClicks: 500      // Set to 0 for infinite execution
-});
-
-// Start listening for global hotkeys
-clicker.initHotkeys();
-```
-
-### Command Line Interface
-
-Run directly from your terminal with custom flags:
+Run the autoclicker directly from your terminal:
 
 ```bash
-npm start -- --interval=100 --button=left --coords=1920,1080
+node index.js --interval 100 --button left
 ```
+
+### Options:
+*   `--interval`: Delay between clicks in milliseconds (default: 500).
+*   `--button`: Specify `left`, `right`, or `middle`.
+*   `--toggle`: Set a custom key to enable/disable the clicker (default: `f6`).
+
+To stop the process at any time, press `Ctrl + C` in your terminal.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.  
-Created by **Developer**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Distributed under the MIT License. See `LICENSE` for more information.
