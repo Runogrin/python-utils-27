@@ -1,37 +1,36 @@
 /**
- * Performs an asynchronous operation with exponential backoff.
- * Designed for network-dependent autoclicker tasks.
+ * Autoclicker core utilities for python-utils-27
  */
-async function retryOperation(operation, maxRetries = 3, delay = 1000) {
-  let lastError;
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      console.warn(`Attempt ${attempt + 1} failed: ${error.message}`);
-      
-      if (attempt < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt)));
-      }
-    }
+const validateClickCoordinates = (x, y) => {
+  if (typeof x !== 'number' || typeof y !== 'number') {
+    throw new Error('Coordinates must be valid numbers');
   }
+  if (x < 0 || y < 0) {
+    throw new Error('Coordinates cannot be negative');
+  }
+};
 
-  throw new Error(`Operation failed after ${maxRetries} attempts: ${lastError.message}`);
-}
+const safeClickExecution = async (clickFn, x, y) => {
+  try {
+    validateClickCoordinates(x, y);
+    return await clickFn(x, y);
+  } catch (error) {
+    console.error(`Click execution failed: ${error.message}`);
+    return { success: false, error: error.message };
+  }
+};
 
-/**
- * Wrapper for network calls to ensure robustness in unstable environments.
- */
-async function fetchWithRetry(url, options = {}) {
-  return retryOperation(async () => {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response;
-  });
-}
+const delayExecution = (ms) => {
+  if (!Number.isInteger(ms) || ms < 0) {
+    console.warn('Invalid delay duration, defaulting to 100ms');
+    ms = 100;
+  }
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
-module.exports = { retryOperation, fetchWithRetry };
+module.exports = {
+  validateClickCoordinates,
+  safeClickExecution,
+  delayExecution
+};
