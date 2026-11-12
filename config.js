@@ -1,52 +1,33 @@
-const DEFAULT_CONFIG = {
-  clickInterval: 100, // interval between clicks in milliseconds
-  button: 'left', // mouse button: 'left', 'right', or 'middle'
-  clickType: 'single', // 'single' or 'double'
-  repeatCount: 0, // 0 means repeat until stopped manually
-  hotkey: 'F6', // global shortcut key to toggle autoclicker
-  randomizeInterval: false, // adds small random delay variance
-  jitterRange: 0 // random pixel offset for cursor position
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * default settings for the autoclicker
+ */
+const defaults = {
+  interval: 100,
+  clicks: -1,
+  button: 'left',
+  randomize: false
 };
 
 /**
- * Loads and validates configuration options against default values.
- * @param {Object} userConfig - Custom configuration object
- * @returns {Object} Sanitized configuration object
+ * loads configuration from json file or returns defaults
+ * @param {string} filePath 
+ * @returns {Object}
  */
-function loadConfig(userConfig = {}) {
-  const config = { ...DEFAULT_CONFIG, ...userConfig };
-
-  // Validate click interval (minimum 10ms)
-  if (typeof config.clickInterval !== 'number' || config.clickInterval < 10) {
-    config.clickInterval = DEFAULT_CONFIG.clickInterval;
+function loadConfig(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf8');
+      const userConfig = JSON.parse(data);
+      return { ...defaults, ...userConfig };
+    }
+  } catch (error) {
+    console.error('Failed to parse config, using defaults:', error.message);
   }
-
-  // Validate mouse button choice
-  const validButtons = ['left', 'right', 'middle'];
-  if (!validButtons.includes(config.button)) {
-    config.button = DEFAULT_CONFIG.button;
-  }
-
-  // Validate click type
-  const validClickTypes = ['single', 'double'];
-  if (!validClickTypes.includes(config.clickType)) {
-    config.clickType = DEFAULT_CONFIG.clickType;
-  }
-
-  // Validate repeat count (non-negative integer)
-  if (typeof config.repeatCount !== 'number' || config.repeatCount < 0) {
-    config.repeatCount = DEFAULT_CONFIG.repeatCount;
-  }
-
-  // Validate jitter range
-  if (typeof config.jitterRange !== 'number' || config.jitterRange < 0) {
-    config.jitterRange = DEFAULT_CONFIG.jitterRange;
-  }
-
-  return config;
+  
+  return { ...defaults };
 }
 
-module.exports = {
-  DEFAULT_CONFIG,
-  loadConfig
-};
+module.exports = { loadConfig };
