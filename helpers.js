@@ -1,44 +1,36 @@
 /**
- * Optimized event batching for autoclicker inputs
- * Uses requestAnimationFrame to prevent main thread blocking
+ * Helper functions for python-utils-27 autoclicker operations
  */
 
-let pendingEvents = [];
-let isProcessing = false;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const queueClickEvent = (x, y) => {
-  pendingEvents.push({ x, y, timestamp: Date.now() });
-  if (!isProcessing) {
-    requestAnimationFrame(flushClickEvents);
-    isProcessing = true;
-  }
+const getRandomInt = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-const flushClickEvents = () => {
-  const batch = [...pendingEvents];
-  pendingEvents = [];
-  isProcessing = false;
-
-  // Execute clicks in batch to reduce context switching
-  batch.forEach(event => {
-    triggerNativeClick(event.x, event.y);
-  });
+const validateCoordinates = (x, y) => {
+  return typeof x === 'number' && typeof y === 'number' && x >= 0 && y >= 0;
 };
 
-const triggerNativeClick = (x, y) => {
-  const element = document.elementFromPoint(x, y);
-  if (element) {
-    const event = new MouseEvent('click', {
-      view: window,
-      bubbles: true,
-      cancelable: true,
-      clientX: x,
-      clientY: y
-    });
-    element.dispatchEvent(event);
-  }
+const formatTimestamp = () => {
+  return new Date().toISOString().replace('T', ' ').substring(0, 19);
 };
 
-export const calculateInterval = (baseDelay, jitter) => {
-  return baseDelay + Math.floor(Math.random() * jitter);
+const throttleAction = (callback, limit) => {
+  let lastCall = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      return callback(...args);
+    }
+  };
+};
+
+module.exports = {
+  sleep,
+  getRandomInt,
+  validateCoordinates,
+  formatTimestamp,
+  throttleAction
 };
